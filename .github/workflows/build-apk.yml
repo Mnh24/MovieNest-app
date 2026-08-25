@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - claude/flutter-movie-app-lhrips
+      - main
 
 jobs:
   build:
