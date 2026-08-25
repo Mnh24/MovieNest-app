@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/error_mapper.dart';
@@ -17,19 +18,60 @@ import '../providers/movie_details_provider.dart';
 /// also means saved movies remain viewable offline. Extended fields (runtime,
 /// genres, tagline) are loaded from the network and degrade gracefully when
 /// unavailable.
-class MovieDetailsScreen extends ConsumerWidget {
+class MovieDetailsScreen extends ConsumerStatefulWidget {
   const MovieDetailsScreen({super.key, required this.movie});
 
   final Movie movie;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MovieDetailsScreen> createState() => _MovieDetailsScreenState();
+}
+
+class _MovieDetailsScreenState extends ConsumerState<MovieDetailsScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isCollapsed = false;
+
+  static const double _expandedHeight = 240;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// The backdrop is expanded until the app bar collapses onto the surface
+  /// colour; icon and status-bar contrast are flipped at that threshold so
+  /// they stay legible over both the artwork and the solid bar.
+  void _onScroll() {
+    const threshold = _expandedHeight - kToolbarHeight;
+    final collapsed =
+        _scrollController.hasClients && _scrollController.offset > threshold;
+    if (collapsed != _isCollapsed) {
+      setState(() => _isCollapsed = collapsed);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final movie = widget.movie;
     final details = ref.watch(movieDetailsProvider(movie.id));
 
     return Scaffold(
       body: CustomScrollView(
+        controller: _scrollController,
         slivers: [
-          _BackdropAppBar(movie: movie),
+          _BackdropAppBar(
+            movie: movie,
+            expandedHeight: _expandedHeight,
+            isCollapsed: _isCollapsed,
+          ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -58,17 +100,36 @@ class MovieDetailsScreen extends ConsumerWidget {
 }
 
 class _BackdropAppBar extends StatelessWidget {
-  const _BackdropAppBar({required this.movie});
+  const _BackdropAppBar({
+    required this.movie,
+    required this.expandedHeight,
+    required this.isCollapsed,
+  });
 
   final Movie movie;
+  final double expandedHeight;
+  final bool isCollapsed;
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    // Expanded: icons sit over dark artwork, so force light. Collapsed: they
+    // sit over the surface colour, so follow the theme's brightness.
+    final onSurfaceContent = isCollapsed ? scheme.onSurface : Colors.white;
+    final overlayStyle = isCollapsed
+        ? (theme.brightness == Brightness.dark
+              ? SystemUiOverlayStyle.light
+              : SystemUiOverlayStyle.dark)
+        : SystemUiOverlayStyle.light;
+
     return SliverAppBar(
-      expandedHeight: 240,
+      expandedHeight: expandedHeight,
       pinned: true,
       backgroundColor: scheme.surface,
+      foregroundColor: onSurfaceContent,
+      systemOverlayStyle: overlayStyle,
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,
