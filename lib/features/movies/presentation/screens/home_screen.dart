@@ -38,67 +38,60 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         top: false,
-        child: RefreshIndicator(
-          onRefresh: () => ref.read(trendingProvider.notifier).refresh(),
-          child: CustomScrollView(
-            slivers: [
-              const SliverToBoxAdapter(child: _SearchEntryPoint()),
-              const SliverToBoxAdapter(
-                child: _SectionHeader(title: 'Trending this week'),
-              ),
-              trending.when(
-                loading: () =>
-                    const SliverToBoxAdapter(child: MovieListSkeleton()),
-                error: (error, _) => SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: MessageView(
+        child: Column(
+          children: [
+            const _SearchEntryPoint(),
+            const _SectionHeader(title: 'Trending this week'),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(trendingProvider.notifier).refresh(),
+                child: trending.when(
+                  loading: () => const MovieListSkeleton(),
+                  error: (error, _) => _RefreshableMessage(
                     icon: Icons.cloud_off_rounded,
                     title: 'Unable to load movies.',
                     message: messageForError(error),
                     onRetry: () =>
                         ref.read(trendingProvider.notifier).refresh(),
                   ),
-                ),
-                data: (movies) {
-                  if (movies.isEmpty) {
-                    return const SliverFillRemaining(
-                      hasScrollBody: false,
-                      child: MessageView(
+                  data: (movies) {
+                    if (movies.isEmpty) {
+                      return const _RefreshableMessage(
                         icon: Icons.movie_filter_outlined,
                         title: 'No trending movies right now.',
                         message: 'Pull down to refresh and try again.',
+                      );
+                    }
+                    return ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg,
+                        0,
+                        AppSpacing.lg,
+                        AppSpacing.lg,
                       ),
-                    );
-                  }
-                  return SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.lg,
-                      0,
-                      AppSpacing.lg,
-                      AppSpacing.lg,
-                    ),
-                    sliver: SliverList.separated(
                       itemCount: movies.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: AppSpacing.md),
                       itemBuilder: (context, index) {
                         final movie = movies[index];
-                        return MovieListTile(
-                          movie: movie,
-                          trailing: WatchlistIconButton(movie: movie),
-                          onTap: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => MovieDetailsScreen(movie: movie),
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: MovieListTile(
+                            movie: movie,
+                            trailing: WatchlistIconButton(movie: movie),
+                            onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) =>
+                                    MovieDetailsScreen(movie: movie),
+                              ),
                             ),
                           ),
                         );
                       },
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -171,6 +164,44 @@ class _SectionHeader extends StatelessWidget {
           context,
         ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
       ),
+    );
+  }
+}
+
+/// Wraps a [MessageView] in an always-scrollable list so it fills the viewport
+/// and still responds to the surrounding pull-to-refresh gesture.
+class _RefreshableMessage extends StatelessWidget {
+  const _RefreshableMessage({
+    required this.icon,
+    required this.title,
+    this.message,
+    this.onRetry,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? message;
+  final VoidCallback? onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: MessageView(
+                icon: icon,
+                title: title,
+                message: message,
+                onRetry: onRetry,
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

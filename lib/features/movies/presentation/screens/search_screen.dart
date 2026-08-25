@@ -111,17 +111,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         title: 'No results for "$query"',
         message: 'Try a different title or check your spelling.',
       ),
-      SearchResults(:final movies) => ListView.separated(
+      SearchResults(:final movies) => ListView.builder(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(AppSpacing.lg),
         itemCount: movies.length,
-        separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
           final movie = movies[index];
-          return MovieListTile(
-            movie: movie,
-            trailing: WatchlistIconButton(movie: movie),
-            onTap: () => _openDetails(movie),
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: MovieListTile(
+              movie: movie,
+              trailing: WatchlistIconButton(movie: movie),
+              onTap: () => _openDetails(movie),
+            ),
           );
         },
       ),

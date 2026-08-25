@@ -29,14 +29,15 @@ class WatchlistScreen extends ConsumerWidget {
                     "Add movies to your watchlist and they'll remain "
                     'available here even when you\'re offline.',
               )
-            : ListView.separated(
+            : ListView.builder(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 itemCount: movies.length,
-                separatorBuilder: (_, _) =>
-                    const SizedBox(height: AppSpacing.md),
                 itemBuilder: (context, index) {
                   final movie = movies[index];
-                  return _WatchlistTile(movie: movie);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: _WatchlistTile(movie: movie),
+                  );
                 },
               ),
       ),
