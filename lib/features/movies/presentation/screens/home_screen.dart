@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +28,41 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _focusedIndex = 0;
+  List<Movie>? _precachedFor;
+
+  /// Warms the image cache for the trending posters at hero resolution once,
+  /// so switching the focused movie (or the initial hero) appears instantly
+  /// instead of flashing a placeholder while the large image downloads.
+  void _precacheHeroArt(List<Movie> movies) {
+    if (identical(_precachedFor, movies)) return;
+    _precachedFor = movies;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final movie in movies.take(8)) {
+        final url =
+            TmdbImages.posterLarge(movie.posterPath) ??
+            TmdbImages.backdropLarge(movie.backdropPath);
+        if (url != null) {
+          precacheImage(CachedNetworkImageProvider(url), context);
+        }
+      }
+    });
+  }
+
+  Future<void> _refresh() async {
+    ref.invalidate(popularProvider);
+    ref.invalidate(topRatedProvider);
+    ref.invalidate(nowPlayingProvider);
+    await ref.read(trendingProvider.notifier).refresh();
+  }
+
+  void _openDetails(Movie movie, Object heroTag) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MovieDetailsScreen(movie: movie, heroTag: heroTag),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +71,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: RefreshIndicator(
-        onRefresh: () => ref.read(trendingProvider.notifier).refresh(),
+        onRefresh: _refresh,
         child: trending.when(
           loading: () => const _HomeSkeleton(),
           error: (error, _) => SafeArea(
@@ -57,10 +93,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               );
             }
 
+            _precacheHeroArt(movies);
             final focused = movies[_focusedIndex.clamp(0, movies.length - 1)];
             // RootShell's nav bar floats over the body (extendBody: true), so
-            // reserve enough bottom space that the poster strip's captions
-            // don't sit behind it.
+            // reserve enough bottom space that the last row's captions don't
+            // sit behind it.
             final navBarClearance =
                 MediaQuery.paddingOf(context).bottom + 96;
 
@@ -70,28 +107,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 _HeroHeader(movie: focused),
                 const SizedBox(height: AppSpacing.xl),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                  ),
-                  child: Text(
-                    'Trending now',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
+                const _SectionHeader(title: 'Trending now'),
                 const SizedBox(height: AppSpacing.md),
                 _PosterStrip(
                   movies: movies,
                   focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
                   onFocusChanged: (i) => setState(() => _focusedIndex = i),
-                  onTap: (movie, heroTag) => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) =>
-                          MovieDetailsScreen(movie: movie, heroTag: heroTag),
-                    ),
-                  ),
+                  onTap: _openDetails,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                _MovieRail(
+                  title: 'Popular',
+                  provider: popularProvider,
+                  onTap: _openDetails,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                _MovieRail(
+                  title: 'Top rated',
+                  provider: topRatedProvider,
+                  onTap: _openDetails,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                _MovieRail(
+                  title: 'New releases',
+                  provider: nowPlayingProvider,
+                  onTap: _openDetails,
                 ),
                 SizedBox(height: navBarClearance),
               ],
@@ -118,8 +158,8 @@ class _HeroHeader extends ConsumerWidget {
     // that leaves large empty areas. Fall back to the backdrop when no
     // poster is available.
     final heroUrl =
-        TmdbImages.poster(movie.posterPath) ??
-        TmdbImages.backdrop(movie.backdropPath);
+        TmdbImages.posterLarge(movie.posterPath) ??
+        TmdbImages.backdropLarge(movie.backdropPath);
     final details = ref.watch(movieDetailsProvider(movie.id)).valueOrNull;
     final rating = movie.formattedRating;
     final year = movie.releaseYear;
@@ -143,6 +183,7 @@ class _HeroHeader extends ConsumerWidget {
               url: heroUrl,
               fit: BoxFit.cover,
               alignment: const Alignment(0, -0.35),
+              memCacheWidth: 780,
             ),
           ),
           DecoratedBox(
@@ -167,16 +208,23 @@ class _HeroHeader extends ConsumerWidget {
             child: const _HomeTopBar(),
           ),
           Positioned(
-            left: AppSpacing.lg,
-            right: AppSpacing.lg,
+            left: 0,
+            right: 0,
             bottom: AppSpacing.xl,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  'NEW · MOVIE',
-                  textAlign: TextAlign.center,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'NEW · MOVIE',
+                        textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Color(0xFFFFC94D),
                     fontWeight: FontWeight.w800,
@@ -305,7 +353,10 @@ class _HeroHeader extends ConsumerWidget {
                     ),
                   ),
                 ),
-              ],
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -465,7 +516,8 @@ class _PosterStrip extends ConsumerWidget {
                                 duration: const Duration(milliseconds: 260),
                                 opacity: focused ? 1 : 0.6,
                                 child: PosterImage(
-                                  url: TmdbImages.poster(movie.posterPath),
+                                  url: TmdbImages.posterSmall(movie.posterPath),
+                                  memCacheWidth: 342,
                                 ),
                               ),
                               DecoratedBox(
@@ -565,7 +617,10 @@ class _PosterStrip extends ConsumerWidget {
   }
 }
 
-/// A compact circular glass button (watchlist toggle) shown over poster art.
+/// A compact circular translucent button (watchlist toggle) shown over poster
+/// art. Deliberately avoids [BackdropFilter]: real blur per card multiplies
+/// GPU cost across every rail and is a common cause of dropped/blank frames
+/// while scrolling on web, so a solid translucent scrim is used instead.
 class _MiniGlassButton extends StatelessWidget {
   const _MiniGlassButton({
     required this.icon,
@@ -579,22 +634,265 @@ class _MiniGlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Material(
-          color: Colors.black.withValues(alpha: 0.28),
-          shape: const CircleBorder(
-            side: BorderSide(color: Colors.white24, width: 1),
+    return Material(
+      color: Colors.black.withValues(alpha: 0.42),
+      shape: const CircleBorder(
+        side: BorderSide(color: Colors.white24, width: 1),
+      ),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(6),
+          child: Icon(icon, size: 16, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+/// A left-aligned section title used above each horizontal rail.
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Text(
+        title,
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+      ),
+    );
+  }
+}
+
+/// A titled, horizontally scrolling rail of premium poster cards backed by an
+/// async catalog provider (Popular / Top rated / New releases). While loading
+/// it shows a skeleton; on error or an empty result the whole rail (title
+/// included) collapses so the layout never shows an empty labelled band.
+class _MovieRail extends ConsumerWidget {
+  const _MovieRail({
+    required this.title,
+    required this.provider,
+    required this.onTap,
+  });
+
+  final String title;
+  final ProviderListenable<AsyncValue<List<Movie>>> provider;
+  final void Function(Movie movie, Object heroTag) onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final movies = ref.watch(provider);
+
+    return movies.when(
+      loading: () => _scaffold(const _RailSkeleton()),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (list) {
+        if (list.isEmpty) return const SizedBox.shrink();
+        return _scaffold(
+          ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            itemCount: list.length,
+            itemBuilder: (context, index) {
+              final movie = list[index];
+              final heroTag = '$title-${movie.id}';
+              return Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.md),
+                child: _RailCard(
+                  movie: movie,
+                  heroTag: heroTag,
+                  onTap: () => onTap(movie, heroTag),
+                ),
+              );
+            },
           ),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.all(6),
-              child: Icon(icon, size: 16, color: color),
+        );
+      },
+    );
+  }
+
+  Widget _scaffold(Widget rail) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(title: title),
+        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: 232, child: rail),
+      ],
+    );
+  }
+}
+
+/// A single premium poster card used in the catalog rails: portrait art with a
+/// bottom gradient, an inline rating, a watchlist toggle, a title beneath, and
+/// a subtle press-scale for tactile feedback.
+class _RailCard extends ConsumerWidget {
+  const _RailCard({
+    required this.movie,
+    required this.heroTag,
+    required this.onTap,
+  });
+
+  final Movie movie;
+  final Object heroTag;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved = ref.watch(isInWatchlistProvider(movie.id));
+    final rating = movie.formattedRating;
+
+    return SizedBox(
+      width: 132,
+      child: _PressableScale(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.lg * 1.125),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Hero(
+                      tag: heroTag,
+                      child: PosterImage(
+                        url: TmdbImages.posterSmall(movie.posterPath),
+                        memCacheWidth: 342,
+                      ),
+                    ),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.6),
+                          ],
+                          stops: const [0.55, 1],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      right: AppSpacing.sm,
+                      top: AppSpacing.sm,
+                      child: _MiniGlassButton(
+                        icon: saved
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: saved ? Colors.redAccent : Colors.white,
+                        onTap: () =>
+                            ref.read(watchlistProvider.notifier).toggle(movie),
+                      ),
+                    ),
+                    if (rating != null)
+                      Positioned(
+                        left: AppSpacing.sm,
+                        bottom: AppSpacing.sm,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              size: 13,
+                              color: Color(0xFFFFC94D),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              rating,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 11,
+                                shadows: [
+                                  Shadow(blurRadius: 4, color: Colors.black54),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-          ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              movie.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Wraps a tappable card with a subtle scale-down while pressed.
+class _PressableScale extends StatefulWidget {
+  const _PressableScale({required this.child, required this.onTap});
+
+  final Widget child;
+  final VoidCallback onTap;
+
+  @override
+  State<_PressableScale> createState() => _PressableScaleState();
+}
+
+class _PressableScaleState extends State<_PressableScale> {
+  double _scale = 1;
+
+  void _set(double value) {
+    if (mounted) setState(() => _scale = value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _set(0.96),
+      onTapUp: (_) => _set(1),
+      onTapCancel: () => _set(1),
+      onTap: widget.onTap,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
+    );
+  }
+}
+
+/// Placeholder poster boxes shown while a rail's catalog is loading.
+class _RailSkeleton extends StatelessWidget {
+  const _RailSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context).colorScheme.surfaceContainerHighest;
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      itemCount: 4,
+      itemBuilder: (context, _) => Padding(
+        padding: const EdgeInsets.only(right: AppSpacing.md),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.lg * 1.125),
+          child: Container(width: 132, height: 204, color: base),
         ),
       ),
     );

@@ -6,6 +6,9 @@ import '../entities/movie_details.dart';
 /// TMDB implementation and easing testing.
 abstract interface class MovieRepository {
   Future<List<Movie>> getTrending();
+  Future<List<Movie>> getPopular();
+  Future<List<Movie>> getTopRated();
+  Future<List<Movie>> getNowPlaying();
   Future<List<Movie>> searchMovies(String query);
   Future<MovieDetails> getMovieDetails(int id);
   Future<List<CastMember>> getCredits(int id);

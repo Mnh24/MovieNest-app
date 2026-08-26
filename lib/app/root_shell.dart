@@ -63,16 +63,19 @@ class _NavBar extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        AppSpacing.xxl,
+        AppSpacing.lg,
         0,
-        AppSpacing.xxl,
+        AppSpacing.lg,
         bottomInset + AppSpacing.md,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppRadius.lg * 2),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.lg * 2),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
             decoration: BoxDecoration(
               color: scheme.surfaceContainerHighest.withValues(
                 alpha: isDark ? 0.55 : 0.8,
@@ -143,6 +146,8 @@ class _NavBar extends StatelessWidget {
               },
             ),
           ),
+        ),
+      ),
         ),
       ),
     );

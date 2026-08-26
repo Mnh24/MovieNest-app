@@ -14,6 +14,15 @@ class MovieRepositoryImpl implements MovieRepository {
   Future<List<Movie>> getTrending() => _remote.getTrending();
 
   @override
+  Future<List<Movie>> getPopular() => _remote.getPopular();
+
+  @override
+  Future<List<Movie>> getTopRated() => _remote.getTopRated();
+
+  @override
+  Future<List<Movie>> getNowPlaying() => _remote.getNowPlaying();
+
+  @override
   Future<List<Movie>> searchMovies(String query) => _remote.searchMovies(query);
 
   @override

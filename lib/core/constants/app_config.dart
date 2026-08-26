@@ -19,7 +19,15 @@ class AppConfig {
   static const String tmdbImageBaseUrl = 'https://image.tmdb.org/t/p';
 
   /// Image sizes chosen to match how each image is used in the UI.
+  ///
+  /// Smaller sizes are requested for small thumbnails so they download and
+  /// decode quickly; larger sizes are reserved for the full-bleed hero where
+  /// quality matters. TMDB serves each width from its CDN, so picking the
+  /// right one per surface keeps images crisp without over-fetching.
+  static const String posterSizeSmall = 'w342';
   static const String posterSize = 'w500';
+  static const String posterSizeLarge = 'w780';
   static const String backdropSize = 'w780';
+  static const String backdropSizeLarge = 'w1280';
   static const String profileSize = 'w185';
 }
