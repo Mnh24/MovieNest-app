@@ -732,21 +732,8 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
   static const double _gap = AppSpacing.md;
   static const double _lead = AppSpacing.lg;
 
-  // True while a tap-driven centring animation runs, so the scroll listener
-  // doesn't flicker the active card through every poster it passes.
-  bool _programmatic = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Manual horizontal scrolling makes whichever card is under the strip's
-    // centre the active one.
-    _controller.addListener(_syncActiveToCentre);
-  }
-
   @override
   void dispose() {
-    _controller.removeListener(_syncActiveToCentre);
     _controller.dispose();
     super.dispose();
   }
@@ -758,27 +745,26 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
     final position = _controller.position;
     final target = (_centreOffsetFor(index) - position.viewportDimension / 2)
         .clamp(0.0, position.maxScrollExtent);
-    _programmatic = true;
-    _controller
-        .animateTo(
-          target,
-          duration: const Duration(milliseconds: 340),
-          curve: Curves.easeOutCubic,
-        )
-        .whenComplete(() => _programmatic = false);
+    _controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   double _centreOffsetFor(int index) =>
       _lead + index * (_cardWidth + _gap) + _cardWidth / 2;
 
-  /// Picks the card nearest the strip's horizontal centre and makes it active.
+  /// Once a manual scroll settles, make whichever card is nearest the strip's
+  /// centre the active one. Deferring this to scroll-end (rather than every
+  /// scroll frame) keeps the drag smooth, since changing the active card
+  /// rebuilds the hero and colour wash.
   void _syncActiveToCentre() {
-    if (_programmatic || !_controller.hasClients || widget.movies.isEmpty) {
-      return;
-    }
-    final centreX = _controller.offset + _controller.position.viewportDimension / 2;
-    final index = (((centreX - _lead - _cardWidth / 2) / (_cardWidth + _gap))
-            .round())
+    if (!_controller.hasClients || widget.movies.isEmpty) return;
+    final centreX =
+        _controller.offset + _controller.position.viewportDimension / 2;
+    final index = ((centreX - _lead - _cardWidth / 2) / (_cardWidth + _gap))
+        .round()
         .clamp(0, widget.movies.length - 1);
     if (index != widget.focusedIndex) {
       widget.onFocusChanged(index);
@@ -792,33 +778,44 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
 
     return SizedBox(
       height: 244,
-      child: ListView.builder(
-        controller: _controller,
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        itemCount: movies.length,
-        itemBuilder: (context, index) {
-          final movie = movies[index];
-          final focused = index == focusedIndex;
+      child: NotificationListener<ScrollEndNotification>(
+        onNotification: (_) {
+          _syncActiveToCentre();
+          return false;
+        },
+        child: ListView.builder(
+          controller: _controller,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          itemCount: movies.length,
+          itemBuilder: (context, index) {
+            final movie = movies[index];
+            final focused = index == focusedIndex;
 
-          return Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.md),
-            child: GestureDetector(
-              onTap: () {
-                if (focused) {
-                  widget.onTap(movie, 'home-hero-${movie.id}');
-                } else {
-                  widget.onFocusChanged(index);
-                  // Centre the tapped poster within the strip only — a
-                  // horizontal scroll, so the whole page never moves.
-                  _centerOn(index);
-                }
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 260),
-                curve: Curves.easeOutCubic,
-                width: _cardWidth,
-                child: Column(
+            return Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.md),
+              child: GestureDetector(
+                onTap: () {
+                  if (focused) {
+                    widget.onTap(movie, 'home-hero-${movie.id}');
+                  } else {
+                    widget.onFocusChanged(index);
+                    // Centre the tapped poster within the strip only — a
+                    // horizontal scroll, so the whole page never moves.
+                    _centerOn(index);
+                  }
+                },
+                // The active card sits at full size while its neighbours shrink
+                // a little — a clean, quiet way to show the selection.
+                child: AnimatedScale(
+                  scale: focused ? 1.0 : 0.88,
+                  duration: const Duration(milliseconds: 260),
+                  curve: Curves.easeOutCubic,
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOutCubic,
+                    width: _cardWidth,
+                    child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(
@@ -899,9 +896,11 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                   ],
                 ),
               ),
+              ),
             ),
           );
         },
+      ),
       ),
     );
   }
