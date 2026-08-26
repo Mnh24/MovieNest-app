@@ -157,38 +157,40 @@ class _HeroHeader extends ConsumerWidget {
             right: AppSpacing.lg,
             bottom: AppSpacing.xl,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const _GlassBadge(
-                  color: Color(0xFFE23744),
-                  child: Text(
-                    'NEW · MOVIE',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 11,
-                      letterSpacing: 0.6,
-                    ),
+                const Text(
+                  'NEW · MOVIE',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFFFFC94D),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                    letterSpacing: 1.2,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   movie.title.toUpperCase(),
                   maxLines: 2,
+                  textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
-                    height: 1.05,
+                    height: 1.02,
+                    letterSpacing: 1,
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.lg),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
+                    Flexible(
                       child: _GlassBadge(
-                        color: Colors.white.withValues(alpha: 0.14),
+                        color: Colors.black.withValues(alpha: 0.4),
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -200,7 +202,7 @@ class _HeroHeader extends ConsumerWidget {
                             SizedBox(width: AppSpacing.xs),
                             Flexible(
                               child: Text(
-                                'Popular with friends',
+                                'Populer with friends',
                                 overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: Colors.white,
@@ -214,9 +216,9 @@ class _HeroHeader extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.sm),
-                    const _GlassBadge(
-                      color: Colors.white24,
-                      child: Text(
+                    _GlassBadge(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      child: const Text(
                         '18+',
                         style: TextStyle(
                           color: Colors.white,
@@ -248,41 +250,44 @@ class _HeroHeader extends ConsumerWidget {
                     if (genres != null && genres.isNotEmpty) genres,
                   ].join('  •  '),
                   maxLines: 1,
+                  textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white70,
-                    fontWeight: FontWeight.w500,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
-                Divider(color: Colors.white.withValues(alpha: 0.16)),
+                Container(
+                  height: 1,
+                  width: 220,
+                  color: const Color(0xFFE23744).withValues(alpha: 0.6),
+                ),
                 const SizedBox(height: AppSpacing.lg),
-                Center(
-                  child: FilledButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => MovieDetailsScreen(
-                          movie: movie,
-                          heroTag: 'home-hero-${movie.id}',
-                        ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => MovieDetailsScreen(
+                        movie: movie,
+                        heroTag: 'home-hero-${movie.id}',
                       ),
                     ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFFE23744),
-                      foregroundColor: Colors.white,
-                      shape: const StadiumBorder(),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.xxxl,
-                        vertical: AppSpacing.md,
-                      ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFE23744),
+                    foregroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.xxxl,
+                      vertical: AppSpacing.md,
                     ),
-                    icon: const Icon(Icons.local_activity_rounded, size: 20),
-                    label: const Text(
-                      'VIEW DETAILS',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.5,
-                      ),
+                  ),
+                  child: const Text(
+                    'VIEW DETAILS',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                      fontSize: 14,
                     ),
                   ),
                 ),
@@ -302,12 +307,12 @@ class _HomeTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _CircleIconButton(
-          icon: Icons.menu_rounded,
+        IconButton(
+          onPressed: () {},
           tooltip: 'Menu',
-          onTap: () {},
+          icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
         ),
-        const SizedBox(width: AppSpacing.md),
+        const SizedBox(width: AppSpacing.xs),
         Expanded(
           child: GestureDetector(
             onTap: () => Navigator.of(context).push(
@@ -336,44 +341,6 @@ class _HomeTopBar extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _CircleIconButton extends StatelessWidget {
-  const _CircleIconButton({
-    required this.icon,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Material(
-            color: Colors.white.withValues(alpha: 0.14),
-            shape: const CircleBorder(
-              side: BorderSide(color: Colors.white24, width: 1),
-            ),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Icon(icon, color: Colors.white, size: 20),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
