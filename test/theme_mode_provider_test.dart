@@ -17,8 +17,15 @@ void main() {
     return container;
   }
 
-  test('defaults to system mode', () async {
+  test('defaults to dark mode when nothing is stored', () async {
     SharedPreferences.setMockInitialValues({});
+    final container = await buildContainer();
+
+    expect(container.read(themeModeProvider), ThemeMode.dark);
+  });
+
+  test('reads a persisted system mode', () async {
+    SharedPreferences.setMockInitialValues({'theme_mode': 'system'});
     final container = await buildContainer();
 
     expect(container.read(themeModeProvider), ThemeMode.system);
