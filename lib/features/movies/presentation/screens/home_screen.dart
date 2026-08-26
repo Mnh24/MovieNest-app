@@ -726,8 +726,8 @@ class _PosterStrip extends ConsumerStatefulWidget {
 class _PosterStripState extends ConsumerState<_PosterStrip> {
   final ScrollController _controller = ScrollController();
 
-  // All cards share one size — the active card is distinguished by brightness,
-  // a dominant-colour glow and its arrow bar, not by a different size.
+  // All cards share one size and render clean — the active card is
+  // distinguished by a soft shadow and its arrow bar, not by size or dimming.
   static const double _cardWidth = 132;
   static const double _gap = AppSpacing.md;
   static const double _lead = AppSpacing.lg;
@@ -801,15 +801,6 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
           final movie = movies[index];
           final focused = index == focusedIndex;
 
-          // The active card glows in its poster's dominant colour.
-          Color? glow;
-          if (focused) {
-            final url = TmdbImages.posterSmall(movie.posterPath);
-            if (url != null) {
-              glow = ref.watch(dominantColorProvider(url)).valueOrNull;
-            }
-          }
-
           return Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),
             child: GestureDetector(
@@ -836,23 +827,15 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                         curve: Curves.easeOutCubic,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
-                          border: focused
-                              ? Border.all(
-                                  color: (glow ?? Colors.white).withValues(
-                                    alpha: 0.9,
-                                  ),
-                                  width: 2,
-                                )
-                              : null,
+                          // A soft, neutral shadow lifts the active card — no
+                          // coloured border or glow halo, which read as noise.
                           boxShadow: focused
                               ? [
                                   BoxShadow(
-                                    color: (glow ?? Colors.black).withValues(
-                                      alpha: glow != null ? 0.7 : 0.55,
-                                    ),
-                                    blurRadius: 34,
-                                    spreadRadius: -2,
-                                    offset: const Offset(0, 14),
+                                    color: Colors.black.withValues(alpha: 0.28),
+                                    blurRadius: 22,
+                                    spreadRadius: -6,
+                                    offset: const Offset(0, 12),
                                   ),
                                 ]
                               : const [],
@@ -866,13 +849,9 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                               // the row reads clearly; the active card stands
                               // out via its shadow, border and arrow bar rather
                               // than dimming its neighbours.
-                              AnimatedOpacity(
-                                duration: const Duration(milliseconds: 260),
-                                opacity: focused ? 1 : 0.9,
-                                child: PosterImage(
-                                  url: TmdbImages.posterSmall(movie.posterPath),
-                                  memCacheWidth: 342,
-                                ),
+                              PosterImage(
+                                url: TmdbImages.posterSmall(movie.posterPath),
+                                memCacheWidth: 342,
                               ),
                               // Active card: a full-width glass bar across the
                               // bottom whose arrow opens the movie's details.
