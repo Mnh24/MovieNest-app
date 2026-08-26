@@ -10,6 +10,7 @@ import '../../../../core/utils/tmdb_images.dart';
 import '../../../../core/widgets/poster_image.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../watchlist/presentation/providers/watchlist_provider.dart';
+import '../../../watchlist/presentation/screens/watchlist_screen.dart';
 import '../../domain/entities/movie.dart';
 import '../providers/movie_details_provider.dart';
 import '../providers/trending_provider.dart';
@@ -95,20 +96,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
             _precacheHeroArt(movies);
             final focused = movies[_focusedIndex.clamp(0, movies.length - 1)];
-            // RootShell's nav bar floats over the body (extendBody: true), so
-            // reserve enough bottom space that the last row's captions don't
-            // sit behind it.
-            final navBarClearance =
-                MediaQuery.paddingOf(context).bottom + 96;
+            final bottomClearance =
+                MediaQuery.paddingOf(context).bottom + AppSpacing.xl;
 
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.zero,
               children: [
                 _HeroHeader(movie: focused),
-                const SizedBox(height: AppSpacing.xl),
-                const _SectionHeader(title: 'Trending now'),
-                const SizedBox(height: AppSpacing.md),
+                const SizedBox(height: AppSpacing.lg),
+                // The featured poster strip sits directly beneath the hero
+                // (no section label), mirroring the reference's "now showing"
+                // carousel that drives the header above it.
                 _PosterStrip(
                   movies: movies,
                   focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
@@ -133,7 +132,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   provider: nowPlayingProvider,
                   onTap: _openDetails,
                 ),
-                SizedBox(height: navBarClearance),
+                SizedBox(height: bottomClearance),
               ],
             );
           },
@@ -170,7 +169,7 @@ class _HeroHeader extends ConsumerWidget {
     // first screen, clamped so it stays cinematic on short and very tall
     // devices alike.
     final screenHeight = MediaQuery.sizeOf(context).height;
-    final heroHeight = (screenHeight * 0.82).clamp(520.0, 760.0).toDouble();
+    final heroHeight = (screenHeight * 0.64).clamp(460.0, 620.0).toDouble();
 
     return SizedBox(
       height: heroHeight,
@@ -380,34 +379,10 @@ class _HomeTopBar extends StatelessWidget {
       children: [
         // Hamburger inside a rounded-square glass tile, matching the search
         // field's translucent treatment.
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.28),
-                ),
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () {},
-                  child: const Icon(
-                    Icons.menu_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
-            ),
-          ),
+        _GlassIconTile(
+          icon: Icons.menu_rounded,
+          tooltip: 'Menu',
+          onTap: () {},
         ),
         const SizedBox(width: AppSpacing.md),
         Expanded(
@@ -454,7 +429,60 @@ class _HomeTopBar extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(width: AppSpacing.md),
+        // Saved-list (watchlist) shortcut, replacing the old bottom nav.
+        _GlassIconTile(
+          icon: Icons.bookmark_rounded,
+          tooltip: 'Watchlist',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const WatchlistScreen()),
+          ),
+        ),
       ],
+    );
+  }
+}
+
+/// A rounded-square translucent glass tile holding a single icon button, used
+/// for the top bar's menu and watchlist shortcuts.
+class _GlassIconTile extends StatelessWidget {
+  const _GlassIconTile({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(14),
+              onTap: onTap,
+              child: Tooltip(
+                message: tooltip,
+                child: Icon(icon, color: Colors.white, size: 24),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -871,8 +899,8 @@ class _HomeSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final base = Theme.of(context).colorScheme.surfaceContainerHighest;
-    final heroHeight = (MediaQuery.sizeOf(context).height * 0.82)
-        .clamp(520.0, 760.0)
+    final heroHeight = (MediaQuery.sizeOf(context).height * 0.64)
+        .clamp(460.0, 620.0)
         .toDouble();
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
