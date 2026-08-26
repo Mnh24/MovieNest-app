@@ -230,7 +230,7 @@ class _GlassRecede extends StatelessWidget {
                 Positioned.fill(
                   child: IgnorePointer(
                     child: ColoredBox(
-                      color: Colors.black.withValues(alpha: 0.28 * t),
+                      color: Colors.black.withValues(alpha: 0.2 * t),
                     ),
                   ),
                 ),

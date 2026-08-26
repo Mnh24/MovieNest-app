@@ -71,9 +71,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final trending = ref.watch(trendingProvider);
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: RefreshIndicator(
+    // Home is the root: there is nothing to go back to, so block any pop
+    // (system back button, or Flutter's edge swipe-back) here. This keeps the
+    // swipe-back gesture meaningful only on pushed screens like details.
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        body: RefreshIndicator(
         onRefresh: _refresh,
         child: trending.when(
           loading: () => const _HomeSkeleton(),
@@ -170,6 +175,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             );
           },
         ),
+      ),
       ),
     );
   }
