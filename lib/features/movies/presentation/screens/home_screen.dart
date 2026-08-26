@@ -109,14 +109,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ? null
                 : ref.watch(dominantColorProvider(focusedPoster)).valueOrNull;
 
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final base = isDark ? const Color(0xFF0D0A1C) : Colors.white;
+            final tint =
+                dominant ??
+                (isDark ? const Color(0xFF241A44) : const Color(0xFFDCCCFA));
+            // The colour the ambient background starts with at the top. The
+            // hero fades its bottom edge into exactly this colour so there is
+            // no visible seam between the hero and the section below it.
+            final ambientTop = Color.alphaBlend(
+              tint.withValues(alpha: isDark ? 0.55 : 0.5),
+              base,
+            );
+
             return Stack(
               children: [
-                Positioned.fill(child: _AmbientBackground(color: dominant)),
+                Positioned.fill(
+                  child: _AmbientBackground(top: ambientTop, base: base),
+                ),
                 ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: EdgeInsets.zero,
                   children: [
-                    _HeroHeader(movie: focused),
+                    _HeroHeader(movie: focused, fadeColor: ambientTop),
                     const SizedBox(height: AppSpacing.lg),
                     // The featured poster strip sits directly beneath the hero
                     // (no section label), mirroring the reference's "now
@@ -161,9 +176,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 /// info pills, genre line and a primary call-to-action, mirroring a cinema
 /// app's "now showing" header.
 class _HeroHeader extends ConsumerWidget {
-  const _HeroHeader({required this.movie});
+  const _HeroHeader({required this.movie, required this.fadeColor});
 
   final Movie movie;
+
+  /// The colour the hero's bottom edge fades into — the same colour the
+  /// section below starts with — so there is no visible seam between them.
+  final Color fadeColor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -208,10 +227,11 @@ class _HeroHeader extends ConsumerWidget {
                 colors: [
                   Colors.black.withValues(alpha: 0.55),
                   Colors.black.withValues(alpha: 0.05),
-                  Colors.black.withValues(alpha: 0.25),
-                  Colors.black.withValues(alpha: 0.95),
+                  Colors.black.withValues(alpha: 0.35),
+                  fadeColor.withValues(alpha: 0.85),
+                  fadeColor,
                 ],
-                stops: const [0, 0.32, 0.6, 1],
+                stops: const [0, 0.3, 0.62, 0.9, 1],
               ),
             ),
           ),
@@ -578,23 +598,13 @@ class _GlassArrowBar extends StatelessWidget {
 /// in dark mode the base is near-black. The gradient animates whenever the
 /// active movie (and therefore the colour) changes.
 class _AmbientBackground extends StatelessWidget {
-  const _AmbientBackground({required this.color});
+  const _AmbientBackground({required this.top, required this.base});
 
-  final Color? color;
+  final Color top;
+  final Color base;
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final base = isDark ? const Color(0xFF0D0A1C) : Colors.white;
-    final fallback = isDark
-        ? const Color(0xFF241A44)
-        : const Color(0xFFDCCCFA);
-    final tint = color ?? fallback;
-    final top = Color.alphaBlend(
-      tint.withValues(alpha: isDark ? 0.55 : 0.5),
-      base,
-    );
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 550),
       curve: Curves.easeOut,
@@ -602,8 +612,11 @@ class _AmbientBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [top, base],
-          stops: const [0, 0.72],
+          // Hold the tint through the hero/section seam (~0.66 of the
+          // viewport, where the hero's faded bottom lands) so the two meet in
+          // the same colour, then ease down to the base further below.
+          colors: [top, top, base],
+          stops: const [0, 0.66, 1],
         ),
       ),
     );
@@ -658,8 +671,9 @@ class _PosterStrip extends ConsumerStatefulWidget {
 class _PosterStripState extends ConsumerState<_PosterStrip> {
   final ScrollController _controller = ScrollController();
 
-  static const double _focusedWidth = 178;
-  static const double _itemWidth = 118;
+  // All cards share one size — the active card is distinguished by brightness,
+  // a dominant-colour glow and its arrow bar, not by a different size.
+  static const double _cardWidth = 132;
   static const double _gap = AppSpacing.md;
   static const double _lead = AppSpacing.lg;
 
@@ -674,8 +688,8 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
   void _centerOn(int index) {
     if (!_controller.hasClients) return;
     final position = _controller.position;
-    final leftEdge = _lead + index * (_itemWidth + _gap);
-    final itemCentre = leftEdge + _focusedWidth / 2;
+    final leftEdge = _lead + index * (_cardWidth + _gap);
+    final itemCentre = leftEdge + _cardWidth / 2;
     final target = (itemCentre - position.viewportDimension / 2).clamp(
       0.0,
       position.maxScrollExtent,
@@ -728,7 +742,7 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
-                width: focused ? 178 : 118,
+                width: _cardWidth,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -738,6 +752,14 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                         curve: Curves.easeOutCubic,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(24),
+                          border: focused
+                              ? Border.all(
+                                  color: (glow ?? Colors.white).withValues(
+                                    alpha: 0.9,
+                                  ),
+                                  width: 2,
+                                )
+                              : null,
                           boxShadow: focused
                               ? [
                                   BoxShadow(
