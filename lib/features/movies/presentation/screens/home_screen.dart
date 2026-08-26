@@ -226,10 +226,10 @@ class _HeroHeader extends ConsumerWidget {
                         'NEW · MOVIE',
                         textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0xFFFFC94D),
+                    color: Color(0xFFF2C94C),
                     fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                    letterSpacing: 1.2,
+                    fontSize: 13,
+                    letterSpacing: 2.5,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -238,11 +238,12 @@ class _HeroHeader extends ConsumerWidget {
                   maxLines: 2,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w900,
-                    height: 1.02,
-                    letterSpacing: 1,
+                    height: 1.0,
+                    letterSpacing: 1.5,
+                    fontSize: 44,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.lg),
@@ -251,54 +252,55 @@ class _HeroHeader extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Flexible(
-                      child: _GlassBadge(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.people_alt_rounded,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                            SizedBox(width: AppSpacing.xs),
-                            Flexible(
-                              child: Text(
-                                'Populer with friends',
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
+                      child: _HeroPill(
+                        color: Colors.black.withValues(alpha: 0.45),
+                        child: const Text(
+                          'Populer with friends',
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    _GlassBadge(
-                      color: Colors.black.withValues(alpha: 0.4),
+                    const SizedBox(width: AppSpacing.xs),
+                    _HeroPill(
+                      color: Colors.black.withValues(alpha: 0.45),
                       child: const Text(
                         '18+',
                         style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
-                          fontSize: 12,
+                          fontSize: 13,
                         ),
                       ),
                     ),
                     if (rating != null) ...[
-                      const SizedBox(width: AppSpacing.sm),
-                      _GlassBadge(
-                        color: const Color(0xFFFFC94D),
-                        child: Text(
-                          '$rating/10',
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 12,
+                      const SizedBox(width: AppSpacing.md),
+                      _HeroPill(
+                        color: const Color(0xFFF2C94C),
+                        child: Text.rich(
+                          TextSpan(
+                            children: [
+                              TextSpan(
+                                text: rating,
+                                style: const TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              const TextSpan(
+                                text: '/10',
+                                style: TextStyle(
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 9,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -310,11 +312,12 @@ class _HeroHeader extends ConsumerWidget {
                   [
                     if (year != null) year,
                     if (genres != null && genres.isNotEmpty) genres,
+                    'Datasat, Dolby Digital',
                   ].join('  •  '),
                   maxLines: 1,
                   textAlign: TextAlign.center,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
@@ -322,10 +325,10 @@ class _HeroHeader extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Container(
                   height: 1,
-                  width: 220,
-                  color: const Color(0xFFE23744).withValues(alpha: 0.6),
+                  width: 200,
+                  color: const Color(0xFFF5261E).withValues(alpha: 0.5),
                 ),
-                const SizedBox(height: AppSpacing.lg),
+                const SizedBox(height: AppSpacing.xl),
                 FilledButton(
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute<void>(
@@ -336,20 +339,23 @@ class _HeroHeader extends ConsumerWidget {
                     ),
                   ),
                   style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFE23744),
+                    backgroundColor: const Color(0xFFF5261E),
                     foregroundColor: Colors.white,
-                    shape: const StadiumBorder(),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.xxxl,
-                      vertical: AppSpacing.md,
+                      horizontal: 44,
+                      vertical: 18,
                     ),
                   ),
                   child: const Text(
-                    'VIEW DETAILS',
+                    'BUY TICKET',
                     style: TextStyle(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.5,
-                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 2,
+                      fontSize: 15,
                     ),
                   ),
                 ),
@@ -372,35 +378,78 @@ class _HomeTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        IconButton(
-          onPressed: () {},
-          tooltip: 'Menu',
-          icon: const Icon(Icons.menu_rounded, color: Colors.white, size: 26),
+        // Hamburger inside a rounded-square glass tile, matching the search
+        // field's translucent treatment.
+        ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.28),
+                ),
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () {},
+                  child: const Icon(
+                    Icons.menu_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
-        const SizedBox(width: AppSpacing.xs),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: GestureDetector(
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
             ),
-            child: Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.14),
-                borderRadius: BorderRadius.circular(AppRadius.lg * 2),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-              ),
-              child: const Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Search Movies...',
-                      style: TextStyle(color: Colors.white70, fontSize: 14),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(23),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: Container(
+                  height: 46,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(23),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.28),
                     ),
                   ),
-                  Icon(Icons.search_rounded, color: Colors.white, size: 20),
-                ],
+                  child: const Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Search Movies...',
+                          style: TextStyle(
+                            color: Colors.white70,
+                            fontSize: 15,
+                          ),
+                        ),
+                      ),
+                      Icon(
+                        Icons.search_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -410,31 +459,27 @@ class _HomeTopBar extends StatelessWidget {
   }
 }
 
-/// A small liquid-glass pill used for badges over the hero art.
-class _GlassBadge extends StatelessWidget {
-  const _GlassBadge({required this.child, required this.color});
+/// A rounded-rectangle info pill used beneath the hero title (metadata and
+/// rating), matching the reference's moderate corner radius rather than a
+/// fully rounded stadium.
+class _HeroPill extends StatelessWidget {
+  const _HeroPill({required this.child, required this.color});
 
   final Widget child;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppRadius.lg * 2),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(AppRadius.lg * 2),
-          ),
-          child: Center(widthFactor: 1, child: child),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: 11,
       ),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Center(widthFactor: 1, child: child),
     );
   }
 }
@@ -466,8 +511,6 @@ class _PosterStrip extends ConsumerWidget {
         itemBuilder: (context, index) {
           final movie = movies[index];
           final focused = index == focusedIndex;
-          final saved = ref.watch(isInWatchlistProvider(movie.id));
-          final rating = movie.formattedRating;
 
           return Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),
@@ -482,7 +525,7 @@ class _PosterStrip extends ConsumerWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
-                width: focused ? 152 : 120,
+                width: focused ? 168 : 122,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -491,119 +534,41 @@ class _PosterStrip extends ConsumerWidget {
                         duration: const Duration(milliseconds: 260),
                         curve: Curves.easeOutCubic,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(AppRadius.lg * 1.25),
+                          borderRadius: BorderRadius.circular(24),
                           boxShadow: focused
                               ? [
                                   BoxShadow(
-                                    color: const Color(
-                                      0xFFE23744,
-                                    ).withValues(alpha: 0.45),
-                                    blurRadius: 28,
-                                    spreadRadius: -6,
-                                    offset: const Offset(0, 14),
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    blurRadius: 24,
+                                    spreadRadius: -4,
+                                    offset: const Offset(0, 12),
                                   ),
                                 ]
                               : const [],
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            AppRadius.lg * 1.25,
-                          ),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              AnimatedOpacity(
-                                duration: const Duration(milliseconds: 260),
-                                opacity: focused ? 1 : 0.6,
-                                child: PosterImage(
-                                  url: TmdbImages.posterSmall(movie.posterPath),
-                                  memCacheWidth: 342,
-                                ),
-                              ),
-                              DecoratedBox(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topCenter,
-                                    end: Alignment.bottomCenter,
-                                    colors: [
-                                      Colors.transparent,
-                                      Colors.black.withValues(alpha: 0.65),
-                                    ],
-                                    stops: const [0.55, 1],
-                                  ),
-                                ),
-                              ),
-                              if (focused)
-                                DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: const Color(0xFFE23744),
-                                      width: 2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.lg * 1.25,
-                                    ),
-                                  ),
-                                ),
-                              Positioned(
-                                right: AppSpacing.sm,
-                                top: AppSpacing.sm,
-                                child: _MiniGlassButton(
-                                  icon: saved
-                                      ? Icons.favorite_rounded
-                                      : Icons.favorite_border_rounded,
-                                  color: saved
-                                      ? Colors.redAccent
-                                      : Colors.white,
-                                  onTap: () => ref
-                                      .read(watchlistProvider.notifier)
-                                      .toggle(movie),
-                                ),
-                              ),
-                              if (rating != null)
-                                Positioned(
-                                  left: AppSpacing.sm,
-                                  bottom: AppSpacing.sm,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.star_rounded,
-                                        size: 13,
-                                        color: Color(0xFFFFC94D),
-                                      ),
-                                      const SizedBox(width: 2),
-                                      Text(
-                                        rating,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          fontSize: 11,
-                                          shadows: [
-                                            Shadow(
-                                              blurRadius: 4,
-                                              color: Colors.black54,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
+                          borderRadius: BorderRadius.circular(24),
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 260),
+                            opacity: focused ? 1 : 0.5,
+                            child: PosterImage(
+                              url: TmdbImages.posterSmall(movie.posterPath),
+                              memCacheWidth: 342,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.sm),
+                    const SizedBox(height: AppSpacing.md),
                     Text(
-                      movie.title,
+                      movie.title.toUpperCase(),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: focused ? Colors.white : Colors.white70,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: focused ? Colors.white : Colors.white54,
                         fontWeight: focused ? FontWeight.w800 : FontWeight.w500,
+                        letterSpacing: focused ? 1.5 : 0.5,
                       ),
                     ),
                   ],
