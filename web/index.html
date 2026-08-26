@@ -31,6 +31,24 @@
 
   <title>MovieNest</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- Theme colour of the browser UI / PWA chrome. -->
+  <meta name="theme-color" content="#0C0C10">
+
+  <style>
+    /* Paint the page's own background the app's dark "glass canvas" colour so
+       nothing ever flashes white — most visibly during the browser's native
+       edge back-swipe, where the area revealed beside the sliding page is the
+       page background rather than Flutter's canvas. Also stops the horizontal
+       overscroll from triggering browser history navigation where supported,
+       leaving the in-app Cupertino swipe-back gesture in control. */
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #0C0C10;
+      overscroll-behavior: none;
+    }
+  </style>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
