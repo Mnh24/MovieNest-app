@@ -11,8 +11,10 @@ class AppTheme {
   const AppTheme._();
 
   static const Color _seed = Color(0xFF7C5CFC);
-  static const Color _darkBackground = Color(0xFF120C1F);
-  static const Color _darkSurface = Color(0xFF1C1530);
+  // Near-black "glass" tones for dark mode: a neutral, slightly cool black for
+  // the canvas and a faintly lighter charcoal for glass surfaces/cards.
+  static const Color _darkBackground = Color(0xFF09090B);
+  static const Color _darkSurface = Color(0xFF17171B);
   static const Color _lightSurface = Color(0xFFF3EEFF);
 
   /// A rich, non-flat backdrop gradient shown behind every screen.
@@ -20,9 +22,9 @@ class AppTheme {
   /// Kept separate from [ThemeData.scaffoldBackgroundColor] (which only
   /// accepts a solid colour) so screens can paint it via [AppBackground].
   static const List<Color> darkBackgroundGradient = [
-    Color(0xFF241A44),
-    Color(0xFF160F2E),
-    Color(0xFF0D0A1C),
+    Color(0xFF121214),
+    Color(0xFF0A0A0C),
+    Color(0xFF050506),
   ];
 
   static const List<Color> lightBackgroundGradient = [
