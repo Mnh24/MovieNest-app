@@ -1,3 +1,6 @@
+import 'dart:ui' show ImageFilter;
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'app_spacing.dart';
@@ -70,12 +73,12 @@ class AppTheme {
       // from the left edge, in addition to the back button.
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.windows: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.linux: CupertinoPageTransitionsBuilder(),
-          TargetPlatform.fuchsia: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.android: _GlassBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: _GlassBackPageTransitionsBuilder(),
+          TargetPlatform.macOS: _GlassBackPageTransitionsBuilder(),
+          TargetPlatform.windows: _GlassBackPageTransitionsBuilder(),
+          TargetPlatform.linux: _GlassBackPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: _GlassBackPageTransitionsBuilder(),
         },
       ),
     );
@@ -161,6 +164,83 @@ class AppTheme {
       brightness == Brightness.dark
       ? darkBackgroundGradient
       : lightBackgroundGradient;
+}
+
+/// The app-wide page transition: an iOS-style slide-and-swipe-back, but with
+/// the page underneath the one on top rendered as a softly-blurred glass layer
+/// instead of the default dark dim.
+///
+/// It reuses [CupertinoRouteTransitionMixin.buildPageTransitions] for the
+/// incoming page's slide and, crucially, the interactive edge swipe-back
+/// gesture — but hands it a zeroed secondary animation so it applies no dim of
+/// its own. The receding page's look is taken over by [_GlassRecede], driven by
+/// this route's real secondary animation.
+class _GlassBackPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _GlassBackPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return CupertinoRouteTransitionMixin.buildPageTransitions<T>(
+      route,
+      context,
+      animation,
+      // Suppress Cupertino's own recede/dim; _GlassRecede handles it.
+      const AlwaysStoppedAnimation<double>(0),
+      _GlassRecede(secondary: secondaryAnimation, child: child),
+    );
+  }
+}
+
+/// Renders [child] as it recedes beneath a page pushed on top of it: a light
+/// frosted blur and a faint dim that grow with [secondary], plus a small
+/// parallax shift so it stays mostly still while the top page travels. At rest
+/// (nothing on top) it returns the child untouched, so there is no blur cost
+/// while a screen is simply being viewed.
+class _GlassRecede extends StatelessWidget {
+  const _GlassRecede({required this.secondary, required this.child});
+
+  final Animation<double> secondary;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: secondary,
+      child: child,
+      builder: (context, child) {
+        final t = Curves.easeOut.transform(secondary.value.clamp(0.0, 1.0));
+        if (t == 0) return child!;
+        // Deliberately gentle: a light frost and only a faint dim so the page
+        // behind stays clearly readable as glass rather than being darkened.
+        final sigma = t * 6.0;
+        return FractionalTranslation(
+          translation: Offset(-0.05 * t, 0),
+          child: ImageFiltered(
+            imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+            child: Stack(
+              fit: StackFit.passthrough,
+              children: [
+                child!,
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: ColoredBox(
+                      color: Colors.black.withValues(alpha: 0.12 * t),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 /// Paints the app's signature gradient behind a screen's content.
