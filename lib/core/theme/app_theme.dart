@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -167,8 +165,8 @@ class AppTheme {
 }
 
 /// The app-wide page transition: an iOS-style slide-and-swipe-back, but with
-/// the page underneath the one on top rendered as a softly-blurred glass layer
-/// instead of the default dark dim.
+/// the page underneath the one on top rendered as a receding "smoked glass"
+/// layer instead of the default flat dim.
 ///
 /// It reuses [CupertinoRouteTransitionMixin.buildPageTransitions] for the
 /// incoming page's slide and, crucially, the interactive edge swipe-back
@@ -197,11 +195,15 @@ class _GlassBackPageTransitionsBuilder extends PageTransitionsBuilder {
   }
 }
 
-/// Renders [child] as it recedes beneath a page pushed on top of it: a light
-/// frosted blur and a faint dim that grow with [secondary], plus a small
-/// parallax shift so it stays mostly still while the top page travels. At rest
-/// (nothing on top) it returns the child untouched, so there is no blur cost
-/// while a screen is simply being viewed.
+/// Renders [child] as it recedes beneath a page pushed on top of it: a gentle
+/// scale-back and small parallax, with a faint "smoked glass" scrim that grows
+/// with [secondary]. At rest (nothing on top) it returns the child untouched.
+///
+/// It deliberately does NOT rasterise the page through an image-filter blur:
+/// on web the blur shader compiles the first time it's used, which renders a
+/// blank (white/dark) frame on that first transition. A translucent scrim plus
+/// a subtle scale reads as receding glass without any shader warmup, so the
+/// effect is identical on the very first swipe as on every one after.
 class _GlassRecede extends StatelessWidget {
   const _GlassRecede({required this.secondary, required this.child});
 
@@ -216,13 +218,11 @@ class _GlassRecede extends StatelessWidget {
       builder: (context, child) {
         final t = Curves.easeOut.transform(secondary.value.clamp(0.0, 1.0));
         if (t == 0) return child!;
-        // Deliberately gentle: a light frost and only a faint dim so the page
-        // behind stays clearly readable as glass rather than being darkened.
-        final sigma = t * 6.0;
-        return FractionalTranslation(
-          translation: Offset(-0.05 * t, 0),
-          child: ImageFiltered(
-            imageFilter: ImageFilter.blur(sigmaX: sigma, sigmaY: sigma),
+        return Transform.scale(
+          scale: 1 - 0.03 * t,
+          alignment: Alignment.center,
+          child: FractionalTranslation(
+            translation: Offset(-0.05 * t, 0),
             child: Stack(
               fit: StackFit.passthrough,
               children: [
@@ -230,7 +230,7 @@ class _GlassRecede extends StatelessWidget {
                 Positioned.fill(
                   child: IgnorePointer(
                     child: ColoredBox(
-                      color: Colors.black.withValues(alpha: 0.12 * t),
+                      color: Colors.black.withValues(alpha: 0.28 * t),
                     ),
                   ),
                 ),
