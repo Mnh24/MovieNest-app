@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/tmdb_images.dart';
 import '../../../../core/widgets/poster_image.dart';
 import '../../../../core/widgets/state_views.dart';
@@ -377,13 +378,8 @@ class _HomeTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Hamburger inside a rounded-square glass tile, matching the search
-        // field's translucent treatment.
-        _GlassIconTile(
-          icon: Icons.menu_rounded,
-          tooltip: 'Menu',
-          onTap: () {},
-        ),
+        // Dark/light theme toggle, in the same glass tile as the search field.
+        const _ThemeToggleButton(),
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: GestureDetector(
@@ -487,6 +483,66 @@ class _GlassIconTile extends StatelessWidget {
   }
 }
 
+/// Top-bar button that toggles between light and dark themes, showing the
+/// icon of the mode it will switch to.
+class _ThemeToggleButton extends ConsumerWidget {
+  const _ThemeToggleButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return _GlassIconTile(
+      icon: isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+      tooltip: isDark ? 'Switch to light' : 'Switch to dark',
+      onTap: () => ref
+          .read(themeModeProvider.notifier)
+          .setThemeMode(isDark ? ThemeMode.light : ThemeMode.dark),
+    );
+  }
+}
+
+/// A circular liquid-glass arrow shown on the active poster; tapping it opens
+/// the movie's details. Only one is on screen at a time (the focused card),
+/// so its real blur is inexpensive.
+class _GlassArrowButton extends StatelessWidget {
+  const _GlassArrowButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'View details',
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.22),
+            shape: CircleBorder(
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: 0.5),
+                width: 1.2,
+              ),
+            ),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: const Padding(
+                padding: EdgeInsets.all(10),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A rounded-rectangle info pill used beneath the hero title (metadata and
 /// rating), matching the reference's moderate corner radius rather than a
 /// fully rounded stadium.
@@ -548,12 +604,20 @@ class _PosterStrip extends ConsumerWidget {
                   onTap(movie, 'home-hero-${movie.id}');
                 } else {
                   onFocusChanged(index);
+                  // Slide the tapped poster to the centre of the strip so the
+                  // newly active card is framed in the middle.
+                  Scrollable.ensureVisible(
+                    context,
+                    alignment: 0.5,
+                    duration: const Duration(milliseconds: 320),
+                    curve: Curves.easeOutCubic,
+                  );
                 }
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 260),
                 curve: Curves.easeOutCubic,
-                width: focused ? 168 : 122,
+                width: focused ? 178 : 118,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -566,23 +630,51 @@ class _PosterStrip extends ConsumerWidget {
                           boxShadow: focused
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.5),
-                                    blurRadius: 24,
-                                    spreadRadius: -4,
-                                    offset: const Offset(0, 12),
+                                    color: Colors.black.withValues(alpha: 0.55),
+                                    blurRadius: 28,
+                                    spreadRadius: -2,
+                                    offset: const Offset(0, 14),
                                   ),
                                 ]
                               : const [],
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(24),
-                          child: AnimatedOpacity(
-                            duration: const Duration(milliseconds: 260),
-                            opacity: focused ? 1 : 0.5,
-                            child: PosterImage(
-                              url: TmdbImages.posterSmall(movie.posterPath),
-                              memCacheWidth: 342,
-                            ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              AnimatedOpacity(
+                                duration: const Duration(milliseconds: 260),
+                                opacity: focused ? 1 : 0.42,
+                                child: PosterImage(
+                                  url: TmdbImages.posterSmall(movie.posterPath),
+                                  memCacheWidth: 342,
+                                ),
+                              ),
+                              // Darken inactive cards so the active one stands
+                              // out clearly.
+                              if (!focused)
+                                const DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: Color(0x40000000),
+                                  ),
+                                ),
+                              // Active card: a glass arrow that opens details.
+                              if (focused)
+                                Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  bottom: AppSpacing.md,
+                                  child: Center(
+                                    child: _GlassArrowButton(
+                                      onTap: () => onTap(
+                                        movie,
+                                        'home-hero-${movie.id}',
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
