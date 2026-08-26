@@ -862,22 +862,18 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
+                              // All posters render clean and fully opaque so
+                              // the row reads clearly; the active card stands
+                              // out via its shadow, border and arrow bar rather
+                              // than dimming its neighbours.
                               AnimatedOpacity(
                                 duration: const Duration(milliseconds: 260),
-                                opacity: focused ? 1 : 0.42,
+                                opacity: focused ? 1 : 0.9,
                                 child: PosterImage(
                                   url: TmdbImages.posterSmall(movie.posterPath),
                                   memCacheWidth: 342,
                                 ),
                               ),
-                              // Darken inactive cards so the active one stands
-                              // out clearly.
-                              if (!focused)
-                                const DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    color: Color(0x40000000),
-                                  ),
-                                ),
                               // Active card: a full-width glass bar across the
                               // bottom whose arrow opens the movie's details.
                               if (focused)
