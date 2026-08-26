@@ -114,11 +114,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final tint =
                 dominant ??
                 (isDark ? const Color(0xFF241A44) : const Color(0xFFDCCCFA));
-            // The colour the ambient background starts with at the top. The
-            // hero fades its bottom edge into exactly this colour so there is
-            // no visible seam between the hero and the section below it.
+            // The colour the ambient background starts with at the top. Kept
+            // subtle so the movie's colour only whispers through rather than
+            // flooding the page. The hero fades its bottom edge into exactly
+            // this colour so there is no visible seam with the section below.
             final ambientTop = Color.alphaBlend(
-              tint.withValues(alpha: isDark ? 0.55 : 0.5),
+              tint.withValues(alpha: isDark ? 0.22 : 0.12),
               base,
             );
 
@@ -677,28 +678,57 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
   static const double _gap = AppSpacing.md;
   static const double _lead = AppSpacing.lg;
 
+  // True while a tap-driven centring animation runs, so the scroll listener
+  // doesn't flicker the active card through every poster it passes.
+  bool _programmatic = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Manual horizontal scrolling makes whichever card is under the strip's
+    // centre the active one.
+    _controller.addListener(_syncActiveToCentre);
+  }
+
   @override
   void dispose() {
+    _controller.removeListener(_syncActiveToCentre);
     _controller.dispose();
     super.dispose();
   }
 
   /// Horizontally scrolls the strip (never the page) so the item at [index]
-  /// — which is becoming the focused, wider card — is centred in the viewport.
+  /// is centred in the viewport.
   void _centerOn(int index) {
     if (!_controller.hasClients) return;
     final position = _controller.position;
-    final leftEdge = _lead + index * (_cardWidth + _gap);
-    final itemCentre = leftEdge + _cardWidth / 2;
-    final target = (itemCentre - position.viewportDimension / 2).clamp(
-      0.0,
-      position.maxScrollExtent,
-    );
-    _controller.animateTo(
-      target,
-      duration: const Duration(milliseconds: 340),
-      curve: Curves.easeOutCubic,
-    );
+    final target = (_centreOffsetFor(index) - position.viewportDimension / 2)
+        .clamp(0.0, position.maxScrollExtent);
+    _programmatic = true;
+    _controller
+        .animateTo(
+          target,
+          duration: const Duration(milliseconds: 340),
+          curve: Curves.easeOutCubic,
+        )
+        .whenComplete(() => _programmatic = false);
+  }
+
+  double _centreOffsetFor(int index) =>
+      _lead + index * (_cardWidth + _gap) + _cardWidth / 2;
+
+  /// Picks the card nearest the strip's horizontal centre and makes it active.
+  void _syncActiveToCentre() {
+    if (_programmatic || !_controller.hasClients || widget.movies.isEmpty) {
+      return;
+    }
+    final centreX = _controller.offset + _controller.position.viewportDimension / 2;
+    final index = (((centreX - _lead - _cardWidth / 2) / (_cardWidth + _gap))
+            .round())
+        .clamp(0, widget.movies.length - 1);
+    if (index != widget.focusedIndex) {
+      widget.onFocusChanged(index);
+    }
   }
 
   @override
