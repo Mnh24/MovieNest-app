@@ -562,33 +562,27 @@ class _GlassArrowBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A solid translucent scrim rather than a live BackdropFilter: real blur
+    // inside the scrolling list forces a costly re-sample every frame and is a
+    // common cause of janky scrolling on web.
     return Tooltip(
       message: 'View details',
-      // ClipRect confines the backdrop blur to the bar's own bounds — without
-      // it, BackdropFilter blurs the whole card (its nearest ancestor clip).
-      child: ClipRect(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-          child: Material(
-            color: Colors.white.withValues(alpha: 0.18),
-            child: InkWell(
-              onTap: onTap,
-              child: Container(
-                height: 48,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  border: Border(
-                    top: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                  ),
-                ),
-                child: const Icon(
-                  Icons.arrow_forward_rounded,
-                  color: Colors.white,
-                  size: 24,
-                ),
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.34),
+        child: InkWell(
+          onTap: onTap,
+          child: Container(
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(color: Colors.white.withValues(alpha: 0.28)),
               ),
+            ),
+            child: const Icon(
+              Icons.arrow_forward_rounded,
+              color: Colors.white,
+              size: 24,
             ),
           ),
         ),
@@ -622,31 +616,26 @@ class _DominantGlass extends StatelessWidget {
     final strong = dominant.withValues(alpha: isDark ? 0.34 : 0.62);
     final soft = dominant.withValues(alpha: isDark ? 0.24 : 0.46);
 
-    return IgnorePointer(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final h = constraints.maxHeight;
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                top: -150,
-                right: -120,
-                child: _GlassOrb(color: strong, size: 540),
-              ),
-              Positioned(
-                top: h * 0.32,
-                left: -160,
-                child: _GlassOrb(color: soft, size: 460),
-              ),
-              Positioned(
-                bottom: -180,
-                right: -110,
-                child: _GlassOrb(color: strong, size: 520),
-              ),
-            ],
-          );
-        },
+    // RepaintBoundary caches this full-screen wash as its own layer, so
+    // scrolling the page composites the cached raster instead of repainting the
+    // gradients every frame.
+    return RepaintBoundary(
+      child: IgnorePointer(
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              top: -150,
+              right: -130,
+              child: _GlassOrb(color: strong, size: 560),
+            ),
+            Positioned(
+              bottom: -170,
+              left: -140,
+              child: _GlassOrb(color: soft, size: 520),
+            ),
+          ],
+        ),
       ),
     );
   }

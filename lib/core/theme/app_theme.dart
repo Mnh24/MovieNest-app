@@ -212,15 +212,18 @@ class _AmbientOrb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(
-            colors: [color, color.withValues(alpha: 0), Colors.transparent],
-            stops: const [0, 0.7, 1],
+    // Cached as its own layer so it isn't repainted while content scrolls.
+    return RepaintBoundary(
+      child: IgnorePointer(
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RadialGradient(
+              colors: [color, color.withValues(alpha: 0), Colors.transparent],
+              stops: const [0, 0.7, 1],
+            ),
           ),
         ),
       ),
