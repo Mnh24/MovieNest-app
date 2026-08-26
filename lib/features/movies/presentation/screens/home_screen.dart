@@ -13,6 +13,7 @@ import '../../../../core/widgets/state_views.dart';
 import '../../../watchlist/presentation/providers/watchlist_provider.dart';
 import '../../../watchlist/presentation/screens/watchlist_screen.dart';
 import '../../domain/entities/movie.dart';
+import '../providers/dominant_color_provider.dart';
 import '../providers/movie_details_provider.dart';
 import '../providers/trending_provider.dart';
 import 'movie_details_screen.dart';
@@ -100,40 +101,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final bottomClearance =
                 MediaQuery.paddingOf(context).bottom + AppSpacing.xl;
 
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
+            // The focused movie's dominant colour drives an ambient tint
+            // behind the content (white-based in light mode, dark in dark
+            // mode), so the whole page subtly takes on the active poster.
+            final focusedPoster = TmdbImages.posterSmall(focused.posterPath);
+            final dominant = focusedPoster == null
+                ? null
+                : ref.watch(dominantColorProvider(focusedPoster)).valueOrNull;
+
+            return Stack(
               children: [
-                _HeroHeader(movie: focused),
-                const SizedBox(height: AppSpacing.lg),
-                // The featured poster strip sits directly beneath the hero
-                // (no section label), mirroring the reference's "now showing"
-                // carousel that drives the header above it.
-                _PosterStrip(
-                  movies: movies,
-                  focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
-                  onFocusChanged: (i) => setState(() => _focusedIndex = i),
-                  onTap: _openDetails,
+                Positioned.fill(child: _AmbientBackground(color: dominant)),
+                ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _HeroHeader(movie: focused),
+                    const SizedBox(height: AppSpacing.lg),
+                    // The featured poster strip sits directly beneath the hero
+                    // (no section label), mirroring the reference's "now
+                    // showing" carousel that drives the header above it.
+                    _PosterStrip(
+                      movies: movies,
+                      focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
+                      onFocusChanged: (i) => setState(() => _focusedIndex = i),
+                      onTap: _openDetails,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    _MovieRail(
+                      title: 'Popular',
+                      provider: popularProvider,
+                      onTap: _openDetails,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    _MovieRail(
+                      title: 'Top rated',
+                      provider: topRatedProvider,
+                      onTap: _openDetails,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    _MovieRail(
+                      title: 'New releases',
+                      provider: nowPlayingProvider,
+                      onTap: _openDetails,
+                    ),
+                    SizedBox(height: bottomClearance),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.xxl),
-                _MovieRail(
-                  title: 'Popular',
-                  provider: popularProvider,
-                  onTap: _openDetails,
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-                _MovieRail(
-                  title: 'Top rated',
-                  provider: topRatedProvider,
-                  onTap: _openDetails,
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-                _MovieRail(
-                  title: 'New releases',
-                  provider: nowPlayingProvider,
-                  onTap: _openDetails,
-                ),
-                SizedBox(height: bottomClearance),
               ],
             );
           },
@@ -462,7 +476,9 @@ class _GlassIconTile extends StatelessWidget {
           width: 46,
           height: 46,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.12),
+            // A darker scrim (not translucent white) so the white icon stays
+            // legible even over bright areas of the hero artwork.
+            color: Colors.black.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
           ),
@@ -473,7 +489,16 @@ class _GlassIconTile extends StatelessWidget {
               onTap: onTap,
               child: Tooltip(
                 message: tooltip,
-                child: Icon(icon, color: Colors.white, size: 24),
+                child: Center(
+                  child: Icon(
+                    icon,
+                    color: Colors.white,
+                    size: 24,
+                    shadows: const [
+                      Shadow(blurRadius: 6, color: Colors.black54),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -552,6 +577,44 @@ class _GlassArrowBar extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Full-screen ambient backdrop tinted by the active movie's dominant colour.
+///
+/// In light mode the base is white and the tint fades into it from the top;
+/// in dark mode the base is near-black. The gradient animates whenever the
+/// active movie (and therefore the colour) changes.
+class _AmbientBackground extends StatelessWidget {
+  const _AmbientBackground({required this.color});
+
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF0D0A1C) : Colors.white;
+    final fallback = isDark
+        ? const Color(0xFF241A44)
+        : const Color(0xFFDCCCFA);
+    final tint = color ?? fallback;
+    final top = Color.alphaBlend(
+      tint.withValues(alpha: isDark ? 0.55 : 0.5),
+      base,
+    );
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 550),
+      curve: Curves.easeOut,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [top, base],
+          stops: const [0, 0.72],
         ),
       ),
     );
@@ -651,6 +714,15 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
           final movie = movies[index];
           final focused = index == focusedIndex;
 
+          // The active card glows in its poster's dominant colour.
+          Color? glow;
+          if (focused) {
+            final url = TmdbImages.posterSmall(movie.posterPath);
+            if (url != null) {
+              glow = ref.watch(dominantColorProvider(url)).valueOrNull;
+            }
+          }
+
           return Padding(
             padding: const EdgeInsets.only(right: AppSpacing.md),
             child: GestureDetector(
@@ -680,8 +752,10 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                           boxShadow: focused
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.55),
-                                    blurRadius: 28,
+                                    color: (glow ?? Colors.black).withValues(
+                                      alpha: glow != null ? 0.7 : 0.55,
+                                    ),
+                                    blurRadius: 34,
                                     spreadRadius: -2,
                                     offset: const Offset(0, 14),
                                   ),
