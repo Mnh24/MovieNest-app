@@ -101,69 +101,66 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final bottomClearance =
                 MediaQuery.paddingOf(context).bottom + AppSpacing.xl;
 
-            // The focused movie's dominant colour drives an ambient tint
-            // behind the content (white-based in light mode, dark in dark
-            // mode), so the whole page subtly takes on the active poster.
+            // Build a rich, dark "stage" colour from the focused movie's
+            // dominant colour. The hero fades its bottom into this colour and
+            // the poster strip sits on it, so the movie's own colour frames the
+            // featured section stylishly (never washing the artwork out to the
+            // page background) before easing into the page below.
             final focusedPoster = TmdbImages.posterSmall(focused.posterPath);
             final dominant = focusedPoster == null
                 ? null
                 : ref.watch(dominantColorProvider(focusedPoster)).valueOrNull;
+            final stageColor = dominant == null
+                ? const Color(0xFF15111F)
+                : Color.alphaBlend(
+                    Colors.black.withValues(alpha: 0.55),
+                    dominant,
+                  );
 
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            final base = isDark ? const Color(0xFF0D0A1C) : Colors.white;
-            final tint =
-                dominant ??
-                (isDark ? const Color(0xFF241A44) : const Color(0xFFDCCCFA));
-            // The colour the ambient background starts with at the top. Kept
-            // subtle so the movie's colour only whispers through rather than
-            // flooding the page. The hero fades its bottom edge into exactly
-            // this colour so there is no visible seam with the section below.
-            final ambientTop = Color.alphaBlend(
-              tint.withValues(alpha: isDark ? 0.22 : 0.12),
-              base,
-            );
-
-            return Stack(
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
               children: [
-                Positioned.fill(
-                  child: _AmbientBackground(top: ambientTop, base: base),
-                ),
-                ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: [
-                    _HeroHeader(movie: focused, fadeColor: ambientTop),
-                    const SizedBox(height: AppSpacing.lg),
-                    // The featured poster strip sits directly beneath the hero
-                    // (no section label), mirroring the reference's "now
-                    // showing" carousel that drives the header above it.
-                    _PosterStrip(
+                _HeroHeader(movie: focused, fadeColor: stageColor),
+                // The featured poster strip sits on a stage tinted by the
+                // movie's colour that fades into the page below — no section
+                // label, mirroring a "now showing" carousel that drives the
+                // hero above it.
+                _AnimatedStage(
+                  color: stageColor,
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      top: AppSpacing.lg,
+                      bottom: AppSpacing.xl,
+                    ),
+                    child: _PosterStrip(
                       movies: movies,
                       focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
-                      onFocusChanged: (i) => setState(() => _focusedIndex = i),
+                      onFocusChanged: (i) =>
+                          setState(() => _focusedIndex = i),
                       onTap: _openDetails,
                     ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    _MovieRail(
-                      title: 'Popular',
-                      provider: popularProvider,
-                      onTap: _openDetails,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    _MovieRail(
-                      title: 'Top rated',
-                      provider: topRatedProvider,
-                      onTap: _openDetails,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    _MovieRail(
-                      title: 'New releases',
-                      provider: nowPlayingProvider,
-                      onTap: _openDetails,
-                    ),
-                    SizedBox(height: bottomClearance),
-                  ],
+                  ),
                 ),
+                const SizedBox(height: AppSpacing.lg),
+                _MovieRail(
+                  title: 'Popular',
+                  provider: popularProvider,
+                  onTap: _openDetails,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                _MovieRail(
+                  title: 'Top rated',
+                  provider: topRatedProvider,
+                  onTap: _openDetails,
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                _MovieRail(
+                  title: 'New releases',
+                  provider: nowPlayingProvider,
+                  onTap: _openDetails,
+                ),
+                SizedBox(height: bottomClearance),
               ],
             );
           },
@@ -593,16 +590,16 @@ class _GlassArrowBar extends StatelessWidget {
   }
 }
 
-/// Full-screen ambient backdrop tinted by the active movie's dominant colour.
-///
-/// In light mode the base is white and the tint fades into it from the top;
-/// in dark mode the base is near-black. The gradient animates whenever the
-/// active movie (and therefore the colour) changes.
-class _AmbientBackground extends StatelessWidget {
-  const _AmbientBackground({required this.top, required this.base});
+/// A "stage" behind the featured poster strip: filled with the active movie's
+/// dark stage colour at the top (meeting the hero's faded bottom seamlessly)
+/// and fading to transparent at the bottom so it melts into the page below.
+/// Because it lives in the scroll content, the stage travels with the strip,
+/// and its colour cross-fades whenever the active movie changes.
+class _AnimatedStage extends StatelessWidget {
+  const _AnimatedStage({required this.color, required this.child});
 
-  final Color top;
-  final Color base;
+  final Color color;
+  final Widget child;
 
   @override
   Widget build(BuildContext context) {
@@ -613,13 +610,11 @@ class _AmbientBackground extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          // Hold the tint through the hero/section seam (~0.66 of the
-          // viewport, where the hero's faded bottom lands) so the two meet in
-          // the same colour, then ease down to the base further below.
-          colors: [top, top, base],
-          stops: const [0, 0.66, 1],
+          colors: [color, color, Colors.transparent],
+          stops: const [0, 0.72, 1],
         ),
       ),
+      child: child,
     );
   }
 }
@@ -844,28 +839,20 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    Builder(
-                      builder: (context) {
-                        final onSurface = Theme.of(
-                          context,
-                        ).colorScheme.onSurface;
-                        return Text(
-                          movie.title.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: focused
-                                    ? onSurface
-                                    : onSurface.withValues(alpha: 0.45),
-                                fontWeight: focused
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
-                                letterSpacing: focused ? 1.5 : 0.5,
-                              ),
-                        );
-                      },
+                    // The strip sits on the dark stage in both themes, so its
+                    // caption stays light.
+                    Text(
+                      movie.title.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: focused
+                            ? Colors.white
+                            : Colors.white.withValues(alpha: 0.5),
+                        fontWeight: focused ? FontWeight.w800 : FontWeight.w500,
+                        letterSpacing: focused ? 1.5 : 0.5,
+                      ),
                     ),
                   ],
                 ),
