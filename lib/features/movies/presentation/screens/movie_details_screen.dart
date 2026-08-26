@@ -55,15 +55,19 @@ class MovieDetailsScreen extends ConsumerWidget {
           fit: StackFit.expand,
           children: [
             Positioned.fill(child: _DetailsGlow(color: dominant)),
-            Column(
+            // The whole page scrolls as one: the hero scrolls away and the
+            // content is never squeezed between the image and the CTA. Bottom
+            // padding keeps the last content clear of the pinned action bar.
+            ListView(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.paddingOf(context).bottom + 108,
+              ),
               children: [
                 _HeroImage(movie: movie, heroTag: heroTag),
-                Expanded(
-                  child: _DetailsCard(
-                    movie: movie,
-                    details: details,
-                    credits: credits,
-                  ),
+                _DetailsCard(
+                  movie: movie,
+                  details: details,
+                  credits: credits,
                 ),
               ],
             ),
@@ -72,6 +76,13 @@ class MovieDetailsScreen extends ConsumerWidget {
               right: AppSpacing.lg,
               top: MediaQuery.paddingOf(context).top + AppSpacing.sm,
               child: _TopBar(movie: movie),
+            ),
+            // The primary action stays pinned to the bottom of the screen.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: _BottomBar(movie: movie),
             ),
           ],
         ),
@@ -312,59 +323,53 @@ class _DetailsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    // No opaque "card" — the content flows straight onto the colour-glass
-    // background, blending with the hero's faded bottom for a seamless,
-    // cinematic page rather than a slab sliding up over the image.
-    return Column(
-      children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              AppSpacing.lg,
-              AppSpacing.xl,
-              AppSpacing.lg,
+    // No opaque "card" and no inner scroll — the content flows straight onto
+    // the colour-glass background as part of the page's single scroll view,
+    // blending with the hero's faded bottom for a seamless cinematic page.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _EyebrowBadge(details: details),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            movie.title,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.w900,
+              height: 1.05,
+              letterSpacing: -0.5,
             ),
-                children: [
-                  _EyebrowBadge(details: details),
-                  const SizedBox(height: AppSpacing.md),
-                  Text(
-                    movie.title,
-                    style: Theme.of(context).textTheme.headlineMedium
-                        ?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          height: 1.05,
-                          letterSpacing: -0.5,
-                        ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _RatingRow(movie: movie),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    (movie.overview == null || movie.overview!.isEmpty)
-                        ? 'No overview is available for this movie.'
-                        : movie.overview!,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  details.when(
-                    loading: () => const _CustomizeSectionSkeleton(),
-                    error: (error, _) => _DetailsUnavailable(
-                      message: messageForError(error),
-                    ),
-                    data: (data) => _CustomizeSection(details: data),
-                  ),
-                  const SizedBox(height: AppSpacing.xxl),
-                  _CastSection(movie: movie, credits: credits),
-                ],
-              ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _RatingRow(movie: movie),
+          const SizedBox(height: AppSpacing.lg),
+          Text(
+            (movie.overview == null || movie.overview!.isEmpty)
+                ? 'No overview is available for this movie.'
+                : movie.overview!,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: scheme.onSurface.withValues(alpha: 0.85),
+              height: 1.55,
             ),
-            _BottomBar(movie: movie),
-          ],
-        );
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          details.when(
+            loading: () => const _CustomizeSectionSkeleton(),
+            error: (error, _) =>
+                _DetailsUnavailable(message: messageForError(error)),
+            data: (data) => _CustomizeSection(details: data),
+          ),
+          const SizedBox(height: AppSpacing.xxl),
+          _CastSection(movie: movie, credits: credits),
+        ],
+      ),
+    );
   }
 }
 
