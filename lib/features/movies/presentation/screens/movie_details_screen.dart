@@ -13,6 +13,7 @@ import '../../../watchlist/presentation/providers/watchlist_provider.dart';
 import '../../domain/entities/cast_member.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/movie_details.dart';
+import '../providers/dominant_color_provider.dart';
 import '../providers/movie_credits_provider.dart';
 import '../providers/movie_details_provider.dart';
 import 'cast_list_screen.dart';
@@ -40,6 +41,12 @@ class MovieDetailsScreen extends ConsumerWidget {
     final details = ref.watch(movieDetailsProvider(movie.id));
     final credits = ref.watch(movieCreditsProvider(movie.id));
 
+    // Tint the whole screen with this movie's own colour, as a soft glass wash.
+    final posterUrl = TmdbImages.posterSmall(movie.posterPath);
+    final dominant = posterUrl == null
+        ? null
+        : ref.watch(dominantColorProvider(posterUrl)).valueOrNull;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       body: AnnotatedRegion<SystemUiOverlayStyle>(
@@ -47,6 +54,7 @@ class MovieDetailsScreen extends ConsumerWidget {
         child: Stack(
           fit: StackFit.expand,
           children: [
+            Positioned.fill(child: _DetailsGlow(color: dominant)),
             Column(
               children: [
                 _HeroImage(movie: movie, heroTag: heroTag),
@@ -66,6 +74,72 @@ class MovieDetailsScreen extends ConsumerWidget {
               child: _TopBar(movie: movie),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A full-screen soft glass wash tinted by the movie's dominant colour, behind
+/// the translucent details card so the page glows in the film's own hue.
+class _DetailsGlow extends StatelessWidget {
+  const _DetailsGlow({required this.color});
+
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final dominant = color;
+    if (dominant == null) return const SizedBox.shrink();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final strong = dominant.withValues(alpha: isDark ? 0.5 : 0.5);
+    final soft = dominant.withValues(alpha: isDark ? 0.36 : 0.4);
+
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final h = constraints.maxHeight;
+            return Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Around the top of the card so the wash glows through it.
+                Positioned(
+                  top: h * 0.42,
+                  right: -120,
+                  child: _Orb(color: strong, size: 540),
+                ),
+                Positioned(
+                  bottom: -160,
+                  left: -130,
+                  child: _Orb(color: soft, size: 500),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+/// A soft radial glow disc used by [_DetailsGlow].
+class _Orb extends StatelessWidget {
+  const _Orb({required this.color, required this.size});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withValues(alpha: 0), Colors.transparent],
+          stops: const [0, 0.72, 1],
         ),
       ),
     );
@@ -202,15 +276,30 @@ class _DetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Transform.translate(
-      offset: const Offset(0, -28),
+      offset: const Offset(0, -32),
       child: DecoratedBox(
+        // A translucent glass panel so the movie's colour wash glows through,
+        // with a bright top rim and a soft lift for depth.
         decoration: BoxDecoration(
-          color: scheme.surface,
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppRadius.lg * 1.5),
+          color: scheme.surface.withValues(alpha: isDark ? 0.72 : 0.78),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          border: Border(
+            top: BorderSide(
+              color: Colors.white.withValues(alpha: isDark ? 0.14 : 0.6),
+              width: 1,
+            ),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.18),
+              blurRadius: 30,
+              spreadRadius: -4,
+              offset: const Offset(0, -6),
+            ),
+          ],
         ),
         child: Column(
           children: [
@@ -276,21 +365,26 @@ class _EyebrowBadge extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: scheme.primary,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
+        color: scheme.primary.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: scheme.primary.withValues(alpha: 0.4)),
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: scheme.onPrimary,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.3,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.local_movies_rounded, size: 13, color: scheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            label.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: scheme.primary,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -368,12 +462,17 @@ class _CustomizeSection extends StatelessWidget {
               for (final genre in details.genres)
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
+                    horizontal: 14,
+                    vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(AppRadius.lg * 2),
+                    color: scheme.surfaceContainerHighest.withValues(
+                      alpha: 0.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: scheme.outlineVariant.withValues(alpha: 0.6),
+                    ),
                   ),
                   child: Text(
                     genre.name,
