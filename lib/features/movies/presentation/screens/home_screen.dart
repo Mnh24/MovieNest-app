@@ -10,6 +10,7 @@ import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/tmdb_images.dart';
 import '../../../../core/widgets/poster_image.dart';
 import '../../../../core/widgets/state_views.dart';
+import '../../../watchlist/presentation/providers/watchlist_provider.dart';
 import '../../../watchlist/presentation/screens/watchlist_screen.dart';
 import '../../domain/entities/movie.dart';
 import '../providers/dominant_color_provider.dart';
@@ -591,6 +592,43 @@ class _GlassArrowBar extends StatelessWidget {
   }
 }
 
+/// A compact glass "save to watchlist" toggle pinned to the top-right of each
+/// poster in the strip. Watches only its own movie's saved state so toggling
+/// one card doesn't rebuild the whole strip.
+class _CardSaveButton extends ConsumerWidget {
+  const _CardSaveButton({required this.movie});
+
+  final Movie movie;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final saved = ref.watch(isInWatchlistProvider(movie.id));
+
+    return ClipOval(
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.4),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () => ref.read(watchlistProvider.notifier).toggle(movie),
+          child: Tooltip(
+            message: saved ? 'Remove from watchlist' : 'Save to watchlist',
+            child: Padding(
+              padding: const EdgeInsets.all(7),
+              child: Icon(
+                saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                color: saved ? const Color(0xFFB9A6FF) : Colors.white,
+                size: 20,
+                shadows: const [Shadow(blurRadius: 6, color: Colors.black54)],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// A "stage" behind the featured poster strip: filled with the active movie's
 /// dark stage colour at the top (meeting the hero's faded bottom seamlessly)
 /// and fading to transparent at the bottom so it melts into the page below.
@@ -839,6 +877,14 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                               PosterImage(
                                 url: TmdbImages.posterSmall(movie.posterPath),
                                 memCacheWidth: 342,
+                              ),
+                              // Save-to-watchlist toggle in the top-right of
+                              // every card, so a movie can be saved straight
+                              // from the strip without opening it.
+                              Positioned(
+                                top: AppSpacing.sm,
+                                right: AppSpacing.sm,
+                                child: _CardSaveButton(movie: movie),
                               ),
                               // Active card: a full-width glass bar across the
                               // bottom whose arrow opens the movie's details.

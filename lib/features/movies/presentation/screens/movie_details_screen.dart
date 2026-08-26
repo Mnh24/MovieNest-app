@@ -231,6 +231,7 @@ class _TopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final saved = ref.watch(isInWatchlistProvider(movie.id));
+    final scheme = Theme.of(context).colorScheme;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -241,8 +242,8 @@ class _TopBar extends ConsumerWidget {
           onTap: () => Navigator.of(context).maybePop(),
         ),
         _FloatingIconButton(
-          icon: saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          iconColor: saved ? Colors.redAccent : Colors.white,
+          icon: saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          iconColor: saved ? scheme.primary : Colors.white,
           tooltip: saved ? 'Remove from watchlist' : 'Add to watchlist',
           onTap: () => ref.read(watchlistProvider.notifier).toggle(movie),
         ),
@@ -686,8 +687,8 @@ class _WatchlistToggle extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Icon(
-              saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: saved ? Colors.redAccent : scheme.onSurface,
+              saved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+              color: saved ? scheme.primary : scheme.onSurface,
             ),
           ),
         ),

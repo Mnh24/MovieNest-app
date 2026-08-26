@@ -188,9 +188,9 @@ class _TrendingCard extends ConsumerWidget {
                   top: AppSpacing.md,
                   child: _GlassIconButton(
                     icon: saved
-                        ? Icons.favorite_rounded
-                        : Icons.favorite_border_rounded,
-                    iconColor: saved ? Colors.redAccent : Colors.white,
+                        ? Icons.bookmark_rounded
+                        : Icons.bookmark_border_rounded,
+                    iconColor: saved ? const Color(0xFFB9A6FF) : Colors.white,
                     tooltip: saved
                         ? 'Remove from watchlist'
                         : 'Add to watchlist',
