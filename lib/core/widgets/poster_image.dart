@@ -8,11 +8,13 @@ class PosterImage extends StatelessWidget {
     super.key,
     required this.url,
     this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
     this.iconSize = 32,
   });
 
   final String? url;
   final BoxFit fit;
+  final Alignment alignment;
   final double iconSize;
 
   @override
@@ -23,6 +25,7 @@ class PosterImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: imageUrl,
       fit: fit,
+      alignment: alignment,
       fadeInDuration: const Duration(milliseconds: 250),
       placeholder: (context, _) => _loading(context),
       errorWidget: (context, _, _) => _placeholder(context),
