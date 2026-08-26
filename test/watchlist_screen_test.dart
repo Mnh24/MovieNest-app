@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:movie_app/core/providers.dart';
-import 'package:movie_app/features/movies/domain/entities/movie.dart';
-import 'package:movie_app/features/watchlist/presentation/providers/watchlist_provider.dart';
-import 'package:movie_app/features/watchlist/presentation/screens/watchlist_screen.dart';
+import 'package:movienest/core/providers.dart';
+import 'package:movienest/features/movies/domain/entities/movie.dart';
+import 'package:movienest/features/watchlist/presentation/providers/watchlist_provider.dart';
+import 'package:movienest/features/watchlist/presentation/screens/watchlist_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<Widget> _app(SharedPreferences prefs) async {

@@ -1,3 +1,4 @@
+import '../../domain/entities/cast_member.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/movie_details.dart';
 import '../../domain/repositories/movie_repository.dart';
@@ -17,4 +18,7 @@ class MovieRepositoryImpl implements MovieRepository {
 
   @override
   Future<MovieDetails> getMovieDetails(int id) => _remote.getMovieDetails(id);
+
+  @override
+  Future<List<CastMember>> getCredits(int id) => _remote.getCredits(id);
 }

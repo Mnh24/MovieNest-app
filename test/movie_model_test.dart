@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:movie_app/features/movies/data/models/movie_details_model.dart';
-import 'package:movie_app/features/movies/data/models/movie_model.dart';
+import 'package:movienest/features/movies/data/models/movie_details_model.dart';
+import 'package:movienest/features/movies/data/models/movie_model.dart';
 
 void main() {
   group('MovieModel.fromJson', () {

@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:movie_app/core/providers.dart';
-import 'package:movie_app/features/movies/domain/entities/movie.dart';
-import 'package:movie_app/features/watchlist/presentation/providers/watchlist_provider.dart';
+import 'package:movienest/core/providers.dart';
+import 'package:movienest/features/movies/domain/entities/movie.dart';
+import 'package:movienest/features/watchlist/presentation/providers/watchlist_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Movie _movie(int id, [String title = 'Movie']) => Movie(id: id, title: title);

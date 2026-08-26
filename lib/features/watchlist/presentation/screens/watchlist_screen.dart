@@ -6,6 +6,7 @@ import '../../../../core/widgets/state_views.dart';
 import '../../../movies/domain/entities/movie.dart';
 import '../../../movies/presentation/screens/movie_details_screen.dart';
 import '../../../movies/presentation/widgets/movie_list_tile.dart';
+import '../../../movies/presentation/widgets/staggered_list_item.dart';
 import '../providers/watchlist_provider.dart';
 
 /// Displays the locally persisted watchlist. Fully available offline since it
@@ -18,7 +19,14 @@ class WatchlistScreen extends ConsumerWidget {
     final movies = ref.watch(watchlistProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Watchlist')),
+      appBar: AppBar(
+        title: Text(
+          'Watchlist',
+          style: Theme.of(
+            context,
+          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+        ),
+      ),
       body: SafeArea(
         top: false,
         child: movies.isEmpty
@@ -36,7 +44,10 @@ class WatchlistScreen extends ConsumerWidget {
                   final movie = movies[index];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: _WatchlistTile(movie: movie),
+                    child: StaggeredListItem(
+                      index: index,
+                      child: _WatchlistTile(movie: movie),
+                    ),
                   );
                 },
               ),
@@ -52,11 +63,13 @@ class _WatchlistTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final heroTag = 'watchlist-poster-${movie.id}';
     return MovieListTile(
       movie: movie,
+      heroTag: heroTag,
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => MovieDetailsScreen(movie: movie),
+          builder: (_) => MovieDetailsScreen(movie: movie, heroTag: heroTag),
         ),
       ),
       trailing: IconButton(

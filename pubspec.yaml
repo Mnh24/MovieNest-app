@@ -1,5 +1,5 @@
-name: movie_app
-description: A Flutter application for browsing trending movies, searching, and managing an offline watchlist using the TMDB API.
+name: movienest
+description: MovieNest - browse trending movies, search, and manage an offline watchlist using the TMDB API.
 publish_to: "none"
 version: 1.0.0+1
 

@@ -2,8 +2,10 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/errors/failure.dart';
 import '../../../../core/network/error_mapper.dart';
+import '../../domain/entities/cast_member.dart';
 import '../../domain/entities/movie.dart';
 import '../../domain/entities/movie_details.dart';
+import '../models/cast_member_model.dart';
 import '../models/movie_details_model.dart';
 import '../models/movie_model.dart';
 
@@ -40,6 +42,21 @@ class TmdbRemoteDataSource {
       final data = response.data;
       if (data == null) throw const ParsingFailure();
       return MovieDetailsModel.fromJson(data);
+    });
+  }
+
+  Future<List<CastMember>> getCredits(int id) async {
+    return _guard(() async {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/movie/$id/credits',
+      );
+      final cast = response.data?['cast'];
+      if (cast is! List) throw const ParsingFailure();
+      return cast
+          .whereType<Map<String, dynamic>>()
+          .map(CastMemberModel.fromJson)
+          .where((c) => c.id != 0)
+          .toList();
     });
   }
 

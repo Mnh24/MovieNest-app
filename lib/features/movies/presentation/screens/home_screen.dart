@@ -1,169 +1,559 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../core/utils/tmdb_images.dart';
+import '../../../../core/widgets/poster_image.dart';
 import '../../../../core/widgets/state_views.dart';
-import '../../../watchlist/presentation/screens/watchlist_screen.dart';
-import '../../../watchlist/presentation/widgets/watchlist_icon_button.dart';
+import '../../../watchlist/presentation/providers/watchlist_provider.dart';
+import '../../domain/entities/movie.dart';
+import '../providers/movie_details_provider.dart';
 import '../providers/trending_provider.dart';
-import '../widgets/movie_list_skeleton.dart';
-import '../widgets/movie_list_tile.dart';
-import '../widgets/theme_mode_button.dart';
 import 'movie_details_screen.dart';
 import 'search_screen.dart';
 
-/// The landing screen: shows a search entry point and the weekly trending list.
-class HomeScreen extends ConsumerWidget {
+/// The landing screen: a full-bleed hero for this week's top trending movie
+/// with a poster strip of the rest of the list beneath it, styled after a
+/// cinema-app "now showing" hero header.
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  int _focusedIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
     final trending = ref.watch(trendingProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Movies'),
-        actions: [
-          IconButton(
-            tooltip: 'Watchlist',
-            icon: const Icon(Icons.bookmarks_outlined),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const WatchlistScreen()),
+      extendBodyBehindAppBar: true,
+      body: RefreshIndicator(
+        onRefresh: () => ref.read(trendingProvider.notifier).refresh(),
+        child: trending.when(
+          loading: () => const _HomeSkeleton(),
+          error: (error, _) => SafeArea(
+            child: _RefreshableMessage(
+              icon: Icons.cloud_off_rounded,
+              title: 'Unable to load movies.',
+              message: messageForError(error),
+              onRetry: () => ref.read(trendingProvider.notifier).refresh(),
             ),
           ),
-          const ThemeModeButton(),
-          const SizedBox(width: AppSpacing.xs),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            const _SearchEntryPoint(),
-            const _SectionHeader(title: 'Trending this week'),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () => ref.read(trendingProvider.notifier).refresh(),
-                child: trending.when(
-                  loading: () => const MovieListSkeleton(),
-                  error: (error, _) => _RefreshableMessage(
-                    icon: Icons.cloud_off_rounded,
-                    title: 'Unable to load movies.',
-                    message: messageForError(error),
-                    onRetry: () =>
-                        ref.read(trendingProvider.notifier).refresh(),
-                  ),
-                  data: (movies) {
-                    if (movies.isEmpty) {
-                      return const _RefreshableMessage(
-                        icon: Icons.movie_filter_outlined,
-                        title: 'No trending movies right now.',
-                        message: 'Pull down to refresh and try again.',
-                      );
-                    }
-                    return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.lg,
-                        0,
-                        AppSpacing.lg,
-                        AppSpacing.lg,
-                      ),
-                      itemCount: movies.length,
-                      itemBuilder: (context, index) {
-                        final movie = movies[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                          child: MovieListTile(
-                            movie: movie,
-                            trailing: WatchlistIconButton(movie: movie),
-                            onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute<void>(
-                                builder: (_) =>
-                                    MovieDetailsScreen(movie: movie),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
+          data: (movies) {
+            if (movies.isEmpty) {
+              return const SafeArea(
+                child: _RefreshableMessage(
+                  icon: Icons.movie_filter_outlined,
+                  title: 'No trending movies right now.',
+                  message: 'Pull down to refresh and try again.',
                 ),
-              ),
-            ),
-          ],
+              );
+            }
+
+            final focused = movies[_focusedIndex.clamp(0, movies.length - 1)];
+            // RootShell's nav bar floats over the body (extendBody: true), so
+            // reserve enough bottom space that the poster strip's captions
+            // don't sit behind it.
+            final navBarClearance =
+                MediaQuery.paddingOf(context).bottom + 96;
+
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.zero,
+              children: [
+                _HeroHeader(movie: focused),
+                const SizedBox(height: AppSpacing.xl),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
+                  child: Text(
+                    'Trending now',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                _PosterStrip(
+                  movies: movies,
+                  focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
+                  onFocusChanged: (i) => setState(() => _focusedIndex = i),
+                  onTap: (movie, heroTag) => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          MovieDetailsScreen(movie: movie, heroTag: heroTag),
+                    ),
+                  ),
+                ),
+                SizedBox(height: navBarClearance),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 }
 
-/// A non-editable search field that navigates to the dedicated search screen.
-class _SearchEntryPoint extends StatelessWidget {
-  const _SearchEntryPoint();
+/// Full-bleed backdrop hero for the focused movie: top bar, title block,
+/// info pills, genre line and a primary call-to-action, mirroring a cinema
+/// app's "now showing" header.
+class _HeroHeader extends ConsumerWidget {
+  const _HeroHeader({required this.movie});
+
+  final Movie movie;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.sm,
-      ),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          onTap: () => Navigator.of(
-            context,
-          ).push(MaterialPageRoute<void>(builder: (_) => const SearchScreen())),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.lg,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final backdropUrl =
+        TmdbImages.backdrop(movie.backdropPath) ??
+        TmdbImages.poster(movie.posterPath);
+    final details = ref.watch(movieDetailsProvider(movie.id)).valueOrNull;
+    final rating = movie.formattedRating;
+    final year = movie.releaseYear;
+    final genres = details?.genres.take(3).map((g) => g.name).join(', ');
+    final topPadding = MediaQuery.paddingOf(context).top;
+
+    return SizedBox(
+      height: 560,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Hero(
+            tag: 'home-hero-${movie.id}',
+            child: PosterImage(url: backdropUrl, fit: BoxFit.cover),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.55),
+                  Colors.black.withValues(alpha: 0.05),
+                  Colors.black.withValues(alpha: 0.25),
+                  Colors.black.withValues(alpha: 0.95),
+                ],
+                stops: const [0, 0.32, 0.6, 1],
+              ),
             ),
-            child: Row(
+          ),
+          Positioned(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            top: topPadding + AppSpacing.sm,
+            child: const _HomeTopBar(),
+          ),
+          Positioned(
+            left: AppSpacing.lg,
+            right: AppSpacing.lg,
+            bottom: AppSpacing.xl,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.search, color: theme.colorScheme.onSurfaceVariant),
-                const SizedBox(width: AppSpacing.md),
+                const _GlassBadge(
+                  color: Color(0xFFE23744),
+                  child: Text(
+                    'NEW · MOVIE',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 11,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Search movies',
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  movie.title.toUpperCase(),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _GlassBadge(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.people_alt_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            SizedBox(width: AppSpacing.xs),
+                            Flexible(
+                              child: Text(
+                                'Popular with friends',
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    const _GlassBadge(
+                      color: Colors.white24,
+                      child: Text(
+                        '18+',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                    if (rating != null) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      _GlassBadge(
+                        color: const Color(0xFFFFC94D),
+                        child: Text(
+                          '$rating/10',
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  [
+                    if (year != null) year,
+                    if (genres != null && genres.isNotEmpty) genres,
+                  ].join('  •  '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.white70,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Divider(color: Colors.white.withValues(alpha: 0.16)),
+                const SizedBox(height: AppSpacing.lg),
+                Center(
+                  child: FilledButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => MovieDetailsScreen(
+                          movie: movie,
+                          heroTag: 'home-hero-${movie.id}',
+                        ),
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFE23744),
+                      foregroundColor: Colors.white,
+                      shape: const StadiumBorder(),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.xxxl,
+                        vertical: AppSpacing.md,
+                      ),
+                    ),
+                    icon: const Icon(Icons.local_activity_rounded, size: 20),
+                    label: const Text(
+                      'VIEW DETAILS',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeTopBar extends StatelessWidget {
+  const _HomeTopBar();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _CircleIconButton(
+          icon: Icons.menu_rounded,
+          tooltip: 'Menu',
+          onTap: () {},
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
+            ),
+            child: Container(
+              height: 44,
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(AppRadius.lg * 2),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Search Movies...',
+                      style: TextStyle(color: Colors.white70, fontSize: 14),
+                    ),
+                  ),
+                  Icon(Icons.search_rounded, color: Colors.white, size: 20),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.14),
+            shape: const CircleBorder(
+              side: BorderSide(color: Colors.white24, width: 1),
+            ),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Icon(icon, color: Colors.white, size: 20),
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.title});
+/// A small liquid-glass pill used for badges over the hero art.
+class _GlassBadge extends StatelessWidget {
+  const _GlassBadge({required this.child, required this.color});
 
-  final String title;
+  final Widget child;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.md,
-        AppSpacing.lg,
-        AppSpacing.md,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppRadius.lg * 2),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(AppRadius.lg * 2),
+          ),
+          child: Center(widthFactor: 1, child: child),
+        ),
       ),
-      child: Text(
-        title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+    );
+  }
+}
+
+/// A horizontally scrolling strip of poster thumbnails beneath the hero;
+/// tapping one updates the focused (hero) movie, mirroring how a "now
+/// showing" carousel drives the header above it.
+class _PosterStrip extends ConsumerWidget {
+  const _PosterStrip({
+    required this.movies,
+    required this.focusedIndex,
+    required this.onFocusChanged,
+    required this.onTap,
+  });
+
+  final List<Movie> movies;
+  final int focusedIndex;
+  final ValueChanged<int> onFocusChanged;
+  final void Function(Movie movie, Object heroTag) onTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return SizedBox(
+      height: 190,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        itemCount: movies.length,
+        itemBuilder: (context, index) {
+          final movie = movies[index];
+          final focused = index == focusedIndex;
+          final saved = ref.watch(isInWatchlistProvider(movie.id));
+
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.md),
+            child: GestureDetector(
+              onTap: () {
+                if (focused) {
+                  onTap(movie, 'home-hero-${movie.id}');
+                } else {
+                  onFocusChanged(index);
+                }
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                width: 110,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            AnimatedOpacity(
+                              duration: const Duration(milliseconds: 220),
+                              opacity: focused ? 1 : 0.55,
+                              child: PosterImage(
+                                url: TmdbImages.poster(movie.posterPath),
+                              ),
+                            ),
+                            if (focused)
+                              DecoratedBox(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: const Color(0xFFE23744),
+                                    width: 2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.lg,
+                                  ),
+                                ),
+                              ),
+                            Positioned(
+                              right: AppSpacing.xs,
+                              top: AppSpacing.xs,
+                              child: Icon(
+                                saved
+                                    ? Icons.favorite_rounded
+                                    : Icons.favorite_border_rounded,
+                                size: 16,
+                                color: saved ? Colors.redAccent : Colors.white,
+                                shadows: const [
+                                  Shadow(blurRadius: 6, color: Colors.black54),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      movie.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        fontWeight: focused ? FontWeight.w800 : FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
+    );
+  }
+}
+
+/// Skeleton placeholder mirroring the hero + strip layout.
+class _HomeSkeleton extends StatelessWidget {
+  const _HomeSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Theme.of(context).colorScheme.surfaceContainerHighest;
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      children: [
+        Container(height: 560, color: base),
+        const SizedBox(height: AppSpacing.xl),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Container(width: 140, height: 20, color: base),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            itemCount: 4,
+            itemBuilder: (context, _) => Padding(
+              padding: const EdgeInsets.only(right: AppSpacing.md),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                child: Container(width: 110, height: 160, color: base),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

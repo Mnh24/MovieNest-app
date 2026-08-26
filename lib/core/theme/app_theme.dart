@@ -10,30 +10,70 @@ import 'app_spacing.dart';
 class AppTheme {
   const AppTheme._();
 
-  static const Color _seed = Color(0xFF2563EB);
+  static const Color _seed = Color(0xFF7C5CFC);
+  static const Color _darkBackground = Color(0xFF120C1F);
+  static const Color _darkSurface = Color(0xFF1C1530);
+  static const Color _lightSurface = Color(0xFFF3EEFF);
+
+  /// A rich, non-flat backdrop gradient shown behind every screen.
+  ///
+  /// Kept separate from [ThemeData.scaffoldBackgroundColor] (which only
+  /// accepts a solid colour) so screens can paint it via [AppBackground].
+  static const List<Color> darkBackgroundGradient = [
+    Color(0xFF241A44),
+    Color(0xFF160F2E),
+    Color(0xFF0D0A1C),
+  ];
+
+  static const List<Color> lightBackgroundGradient = [
+    Color(0xFFDCCCFA),
+    Color(0xFFC7B3F0),
+    Color(0xFFB39EE8),
+  ];
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
-    final colorScheme = ColorScheme.fromSeed(
+    var colorScheme = ColorScheme.fromSeed(
       seedColor: _seed,
       brightness: brightness,
     );
 
+    if (brightness == Brightness.dark) {
+      colorScheme = colorScheme.copyWith(
+        surface: _darkBackground,
+        surfaceContainerHighest: _darkSurface,
+        surfaceContainerHigh: _darkSurface,
+      );
+    } else {
+      // "Light" mode is still a rich purple canvas here, not a white one
+      // (see [lightBackgroundGradient]), so body text/icons need to stay
+      // light-on-dark just like dark mode — a literal light ColorScheme's
+      // near-black onSurface would be unreadable against it. Card/pill
+      // surfaces stay a paler lavender so glass panels remain legible
+      // against that deeper backdrop.
+      colorScheme = colorScheme.copyWith(
+        surfaceContainerHighest: _lightSurface,
+        surfaceContainerHigh: _lightSurface,
+        onSurface: Colors.white,
+        onSurfaceVariant: Colors.white70,
+      );
+    }
+
     final base = ThemeData(
       colorScheme: colorScheme,
       useMaterial3: true,
-      scaffoldBackgroundColor: colorScheme.surface,
+      scaffoldBackgroundColor: Colors.transparent,
     );
 
     return base.copyWith(
       appBarTheme: AppBarTheme(
-        backgroundColor: colorScheme.surface,
+        backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         foregroundColor: colorScheme.onSurface,
         elevation: 0,
-        scrolledUnderElevation: 1,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: base.textTheme.titleLarge?.copyWith(
           fontWeight: FontWeight.w700,
@@ -75,9 +115,18 @@ class AppTheme {
             horizontal: AppSpacing.xxl,
             vertical: AppSpacing.lg,
           ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xxl,
+            vertical: AppSpacing.lg,
           ),
+          shape: const StadiumBorder(),
+          side: BorderSide(color: colorScheme.outlineVariant),
           textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
         ),
       ),
@@ -92,6 +141,37 @@ class AppTheme {
         space: 1,
         thickness: 1,
       ),
+    );
+  }
+
+  static List<Color> gradientFor(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? darkBackgroundGradient
+      : lightBackgroundGradient;
+}
+
+/// Paints the app's signature gradient behind a screen's content.
+///
+/// Since [ThemeData.scaffoldBackgroundColor] only supports a solid colour,
+/// screens wrap their [Scaffold] body in this widget (with the Scaffold left
+/// transparent) to get a consistent, non-flat backdrop in both theme modes.
+class AppBackground extends StatelessWidget {
+  const AppBackground({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: AppTheme.gradientFor(brightness),
+        ),
+      ),
+      child: child,
     );
   }
 }

@@ -21,4 +21,5 @@ class AppConfig {
   /// Image sizes chosen to match how each image is used in the UI.
   static const String posterSize = 'w500';
   static const String backdropSize = 'w780';
+  static const String profileSize = 'w185';
 }

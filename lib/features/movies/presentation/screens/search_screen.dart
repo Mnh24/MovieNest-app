@@ -9,6 +9,7 @@ import '../../domain/entities/movie.dart';
 import '../providers/search_provider.dart';
 import '../widgets/movie_list_skeleton.dart';
 import '../widgets/movie_list_tile.dart';
+import '../widgets/staggered_list_item.dart';
 import 'movie_details_screen.dart';
 
 /// Dedicated search experience with debounced queries and explicit states.
@@ -45,10 +46,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _focusNode.requestFocus();
   }
 
-  void _openDetails(Movie movie) {
+  void _openDetails(Movie movie, Object heroTag) {
     _focusNode.unfocus();
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => MovieDetailsScreen(movie: movie)),
+      MaterialPageRoute<void>(
+        builder: (_) => MovieDetailsScreen(movie: movie, heroTag: heroTag),
+      ),
     );
   }
 
@@ -58,25 +61,41 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          textInputAction: TextInputAction.search,
-          autocorrect: false,
-          onChanged: ref.read(searchProvider.notifier).onQueryChanged,
-          decoration: InputDecoration(
-            hintText: 'Search movies',
-            prefixIcon: const Icon(Icons.search),
-            suffixIcon: ValueListenableBuilder<TextEditingValue>(
-              valueListenable: _controller,
-              builder: (context, value, _) {
-                if (value.text.isEmpty) return const SizedBox.shrink();
-                return IconButton(
-                  tooltip: 'Clear',
-                  icon: const Icon(Icons.close),
-                  onPressed: _onClear,
-                );
-              },
+        title: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.4),
+            ),
+          ),
+          child: TextField(
+            controller: _controller,
+            focusNode: _focusNode,
+            textInputAction: TextInputAction.search,
+            autocorrect: false,
+            onChanged: ref.read(searchProvider.notifier).onQueryChanged,
+            decoration: InputDecoration(
+              hintText: 'Search movies',
+              filled: false,
+              border: InputBorder.none,
+              prefixIcon: const Icon(Icons.search_rounded),
+              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                valueListenable: _controller,
+                builder: (context, value, _) {
+                  if (value.text.isEmpty) return const SizedBox.shrink();
+                  return IconButton(
+                    tooltip: 'Clear',
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: _onClear,
+                  );
+                },
+              ),
             ),
           ),
         ),
@@ -117,12 +136,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         itemCount: movies.length,
         itemBuilder: (context, index) {
           final movie = movies[index];
+          final heroTag = 'search-poster-${movie.id}';
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.md),
-            child: MovieListTile(
-              movie: movie,
-              trailing: WatchlistIconButton(movie: movie),
-              onTap: () => _openDetails(movie),
+            child: StaggeredListItem(
+              index: index,
+              child: MovieListTile(
+                movie: movie,
+                heroTag: heroTag,
+                trailing: WatchlistIconButton(movie: movie),
+                onTap: () => _openDetails(movie, heroTag),
+              ),
             ),
           );
         },

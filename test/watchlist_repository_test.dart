@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:movie_app/features/movies/domain/entities/movie.dart';
-import 'package:movie_app/features/watchlist/data/datasources/watchlist_local_datasource.dart';
-import 'package:movie_app/features/watchlist/data/repositories/watchlist_repository.dart';
+import 'package:movienest/features/movies/domain/entities/movie.dart';
+import 'package:movienest/features/watchlist/data/datasources/watchlist_local_datasource.dart';
+import 'package:movienest/features/watchlist/data/repositories/watchlist_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Movie _movie(int id, [String title = 'Movie']) =>

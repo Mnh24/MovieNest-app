@@ -8,6 +8,8 @@ class TmdbImages {
 
   static String? backdrop(String? path) => _url(path, AppConfig.backdropSize);
 
+  static String? profile(String? path) => _url(path, AppConfig.profileSize);
+
   static String? _url(String? path, String size) {
     if (path == null || path.isEmpty) return null;
     return '${AppConfig.tmdbImageBaseUrl}/$size$path';
