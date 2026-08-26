@@ -539,41 +539,30 @@ class _GlassArrowBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'View details',
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Material(
-          color: Colors.white.withValues(alpha: 0.18),
-          child: InkWell(
-            onTap: onTap,
-            child: Container(
-              height: 48,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'DETAILS',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13,
-                      letterSpacing: 1.5,
+      // ClipRect confines the backdrop blur to the bar's own bounds — without
+      // it, BackdropFilter blurs the whole card (its nearest ancestor clip).
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.18),
+            child: InkWell(
+              onTap: onTap,
+              child: Container(
+                height: 48,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: Colors.white.withValues(alpha: 0.3),
                     ),
                   ),
-                  SizedBox(width: AppSpacing.sm),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ],
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
             ),
           ),
