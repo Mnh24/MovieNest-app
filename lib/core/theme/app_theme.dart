@@ -165,14 +165,15 @@ class AppBackground extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    // Soft neutral light-leak "orbs" over a diagonally-graded canvas create the
-    // cloudy, frosted-glass studio backdrop: a bright white highlight and a
-    // gentle shadow in light mode; two soft grey light diffusions in dark mode.
+    // Soft light-leak "orbs" over a diagonally-graded canvas create the cloudy,
+    // frosted-glass studio backdrop on every screen. Dark mode uses clearly
+    // visible cool-blue and violet diffusions (light glowing behind glass);
+    // light mode uses a bright white highlight and a gentle grey shadow.
     final highlight = isDark
-        ? Colors.white.withValues(alpha: 0.08)
+        ? const Color(0xFF9FB4FF).withValues(alpha: 0.16)
         : Colors.white.withValues(alpha: 0.85);
     final lowlight = isDark
-        ? Colors.white.withValues(alpha: 0.05)
+        ? const Color(0xFF8B6DFF).withValues(alpha: 0.16)
         : const Color(0xFFC7CAD6).withValues(alpha: 0.6);
 
     return DecoratedBox(

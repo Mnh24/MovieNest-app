@@ -612,9 +612,10 @@ class _DominantGlass extends StatelessWidget {
     final dominant = color;
     if (dominant == null) return const SizedBox.shrink();
     // Light mode needs a stronger wash than dark to read as coloured glass
-    // against the pale backdrop.
-    final strong = dominant.withValues(alpha: isDark ? 0.34 : 0.62);
-    final soft = dominant.withValues(alpha: isDark ? 0.24 : 0.46);
+    // against the pale backdrop; dark mode is boosted so the wash is clearly
+    // visible against the near-black canvas too.
+    final strong = dominant.withValues(alpha: isDark ? 0.5 : 0.62);
+    final soft = dominant.withValues(alpha: isDark ? 0.38 : 0.46);
 
     // RepaintBoundary caches this full-screen wash as its own layer, so
     // scrolling the page composites the cached raster instead of repainting the
