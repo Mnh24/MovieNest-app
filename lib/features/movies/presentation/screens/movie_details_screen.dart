@@ -158,6 +158,8 @@ class _HeroImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF0C0C10) : const Color(0xFFE7E8EE);
     final art = PosterImage(
       url:
           TmdbImages.backdrop(movie.backdropPath) ??
@@ -165,20 +167,53 @@ class _HeroImage extends StatelessWidget {
       fit: BoxFit.cover,
       iconSize: 48,
     );
-
-    return SizedBox(
-      height: 420,
-      width: double.infinity,
-      child: heroTag == null
-          ? art
-          : Hero(
-              tag: heroTag!,
-              flightShuttleBuilder: (_, animation, _, _, _) => FadeTransition(
-                opacity: animation.drive(CurveTween(curve: Curves.easeIn)),
-                child: art,
-              ),
+    final image = heroTag == null
+        ? art
+        : Hero(
+            tag: heroTag!,
+            flightShuttleBuilder: (_, animation, _, _, _) => FadeTransition(
+              opacity: animation.drive(CurveTween(curve: Curves.easeIn)),
               child: art,
             ),
+            child: art,
+          );
+
+    return SizedBox(
+      height: 460,
+      width: double.infinity,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          image,
+          // Darken the top for the floating buttons.
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0x66000000), Colors.transparent],
+                stops: [0, 0.28],
+              ),
+            ),
+          ),
+          // Fade the bottom into the page so the backdrop melts into the
+          // content instead of ending on a hard card edge.
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  base.withValues(alpha: 0.7),
+                  base,
+                ],
+                stops: const [0.5, 0.85, 1],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -276,48 +311,31 @@ class _DetailsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Transform.translate(
-      offset: const Offset(0, -32),
-      child: DecoratedBox(
-        // A translucent glass panel so the movie's colour wash glows through,
-        // with a bright top rim and a soft lift for depth.
-        decoration: BoxDecoration(
-          color: scheme.surface.withValues(alpha: isDark ? 0.72 : 0.78),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withValues(alpha: isDark ? 0.14 : 0.6),
-              width: 1,
+    // No opaque "card" — the content flows straight onto the colour-glass
+    // background, blending with the hero's faded bottom for a seamless,
+    // cinematic page rather than a slab sliding up over the image.
+    return Column(
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.lg,
             ),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.5 : 0.18),
-              blurRadius: 30,
-              spreadRadius: -4,
-              offset: const Offset(0, -6),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.xl,
-                  AppSpacing.xl,
-                  AppSpacing.xl,
-                  AppSpacing.lg,
-                ),
                 children: [
                   _EyebrowBadge(details: details),
                   const SizedBox(height: AppSpacing.md),
                   Text(
                     movie.title,
-                    style: Theme.of(context).textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.w800, height: 1.1),
+                    style: Theme.of(context).textTheme.headlineMedium
+                        ?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          height: 1.05,
+                          letterSpacing: -0.5,
+                        ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   _RatingRow(movie: movie),
@@ -346,9 +364,7 @@ class _DetailsCard extends StatelessWidget {
             ),
             _BottomBar(movie: movie),
           ],
-        ),
-      ),
-    );
+        );
   }
 }
 
@@ -603,20 +619,30 @@ class _BottomBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final base = isDark ? const Color(0xFF0C0C10) : const Color(0xFFE7E8EE);
     final saved = ref.watch(isInWatchlistProvider(movie.id));
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    // A high-contrast neutral CTA (light-on-dark / dark-on-light) reads far
+    // more premium than a saturated accent button.
+    final ctaColor = isDark ? Colors.white : const Color(0xFF141418);
+    final ctaText = isDark ? const Color(0xFF141418) : Colors.white;
 
     return Container(
+      // Fade the bar into the page instead of sitting on a hard bordered slab.
       padding: EdgeInsets.fromLTRB(
         AppSpacing.xl,
-        AppSpacing.md,
+        AppSpacing.xxl,
         AppSpacing.xl,
-        bottomInset + AppSpacing.md,
+        bottomInset + AppSpacing.lg,
       ),
       decoration: BoxDecoration(
-        color: scheme.surface,
-        border: Border(top: BorderSide(color: scheme.outlineVariant)),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [base.withValues(alpha: 0), base.withValues(alpha: 0.9), base],
+          stops: const [0, 0.55, 1],
+        ),
       ),
       child: Row(
         children: [
@@ -626,15 +652,19 @@ class _BottomBar extends ConsumerWidget {
             child: FilledButton.icon(
               onPressed: () => showTrailerUnavailable(context),
               style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                ),
+                backgroundColor: ctaColor,
+                foregroundColor: ctaText,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: const StadiumBorder(),
               ),
-              icon: const Icon(Icons.play_arrow_rounded),
+              icon: const Icon(Icons.play_arrow_rounded, size: 22),
               label: const Text(
                 'Watch Trailer',
-                style: TextStyle(fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.3,
+                ),
               ),
             ),
           ),
@@ -656,16 +686,17 @@ class _WatchlistToggle extends ConsumerWidget {
     return Tooltip(
       message: saved ? 'Remove from watchlist' : 'Add to watchlist',
       child: Material(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        shape: CircleBorder(
+          side: BorderSide(
+            color: scheme.outlineVariant.withValues(alpha: 0.7),
+          ),
+        ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          customBorder: const CircleBorder(),
           onTap: () => ref.read(watchlistProvider.notifier).toggle(movie),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg,
-              vertical: AppSpacing.lg,
-            ),
+            padding: const EdgeInsets.all(16),
             child: Icon(
               saved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
               color: saved ? Colors.redAccent : scheme.onSurface,
