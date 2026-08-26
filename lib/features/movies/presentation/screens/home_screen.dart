@@ -247,6 +247,21 @@ class _HeroHeader extends ConsumerWidget {
               ),
             ),
           ),
+          // A frosted-glass play button floating over the artwork; tapping it
+          // opens the featured movie's details (same destination as the hero).
+          Align(
+            alignment: const Alignment(0, -0.2),
+            child: _GlassPlayButton(
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => MovieDetailsScreen(
+                    movie: movie,
+                    heroTag: 'home-hero-${movie.id}',
+                  ),
+                ),
+              ),
+            ),
+          ),
           Positioned(
             left: AppSpacing.lg,
             right: AppSpacing.lg,
@@ -529,6 +544,56 @@ class _GlassIconTile extends StatelessWidget {
                     shadows: const [
                       Shadow(blurRadius: 6, color: Colors.black54),
                     ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A large frosted-glass circular play button floating over the hero artwork.
+/// A real backdrop blur (only one is ever on screen) gives it the liquid-glass
+/// look; tapping it opens the featured movie's details.
+class _GlassPlayButton extends StatelessWidget {
+  const _GlassPlayButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'View details',
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+          child: Material(
+            color: Colors.white.withValues(alpha: 0.18),
+            shape: CircleBorder(
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: 0.55),
+                width: 1.5,
+              ),
+            ),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onTap,
+              child: const SizedBox(
+                width: 78,
+                height: 78,
+                child: Center(
+                  // Nudged right a touch so the triangle looks optically centred.
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 4),
+                    child: Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 42,
+                      shadows: [Shadow(blurRadius: 10, color: Colors.black54)],
+                    ),
                   ),
                 ),
               ),
