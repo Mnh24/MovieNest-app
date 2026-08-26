@@ -110,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ? null
                 : ref.watch(dominantColorProvider(focusedPoster)).valueOrNull;
             final stageColor = dominant == null
-                ? const Color(0xFF15111F)
+                ? const Color(0xFF141416)
                 : Color.alphaBlend(
                     Colors.black.withValues(alpha: 0.55),
                     dominant,
