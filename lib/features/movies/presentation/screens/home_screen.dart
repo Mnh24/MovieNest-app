@@ -229,11 +229,14 @@ class _HeroHeader extends ConsumerWidget {
                 colors: [
                   Colors.black.withValues(alpha: 0.55),
                   Colors.black.withValues(alpha: 0.05),
-                  Colors.black.withValues(alpha: 0.35),
-                  fadeColor.withValues(alpha: 0.85),
+                  Colors.black.withValues(alpha: 0.22),
+                  fadeColor.withValues(alpha: 0.7),
                   fadeColor,
                 ],
-                stops: const [0, 0.3, 0.62, 0.9, 1],
+                // Keep the artwork vivid: the fade into the page colour is
+                // compressed into the bottom ~15% so only a thin strip washes
+                // out rather than a heavy gradient over the lower third.
+                stops: const [0, 0.35, 0.85, 0.96, 1],
               ),
             ),
           ),
