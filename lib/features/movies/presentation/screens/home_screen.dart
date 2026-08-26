@@ -792,16 +792,28 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    Text(
-                      movie.title.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: focused ? Colors.white : Colors.white54,
-                        fontWeight: focused ? FontWeight.w800 : FontWeight.w500,
-                        letterSpacing: focused ? 1.5 : 0.5,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final onSurface = Theme.of(
+                          context,
+                        ).colorScheme.onSurface;
+                        return Text(
+                          movie.title.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: focused
+                                    ? onSurface
+                                    : onSurface.withValues(alpha: 0.45),
+                                fontWeight: focused
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
+                                letterSpacing: focused ? 1.5 : 0.5,
+                              ),
+                        );
+                      },
                     ),
                   ],
                 ),
@@ -1028,7 +1040,7 @@ class _RailCard extends ConsumerWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
               ),
             ),
