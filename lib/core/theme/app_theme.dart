@@ -26,9 +26,9 @@ class AppTheme {
   ];
 
   static const List<Color> lightBackgroundGradient = [
-    Color(0xFFDCCCFA),
-    Color(0xFFC7B3F0),
-    Color(0xFFB39EE8),
+    Color(0xFFFDFCFF),
+    Color(0xFFF4F1FB),
+    Color(0xFFEDE8F7),
   ];
 
   static ThemeData light() => _build(Brightness.light);
@@ -47,17 +47,12 @@ class AppTheme {
         surfaceContainerHigh: _darkSurface,
       );
     } else {
-      // "Light" mode is still a rich purple canvas here, not a white one
-      // (see [lightBackgroundGradient]), so body text/icons need to stay
-      // light-on-dark just like dark mode — a literal light ColorScheme's
-      // near-black onSurface would be unreadable against it. Card/pill
-      // surfaces stay a paler lavender so glass panels remain legible
-      // against that deeper backdrop.
+      // A genuine light theme: near-white canvas with dark text (the default
+      // light ColorScheme's onSurface), and soft lavender-tinted surfaces for
+      // cards and glass panels so they read as light, modern and airy.
       colorScheme = colorScheme.copyWith(
         surfaceContainerHighest: _lightSurface,
         surfaceContainerHigh: _lightSurface,
-        onSurface: Colors.white,
-        onSurfaceVariant: Colors.white70,
       );
     }
 
