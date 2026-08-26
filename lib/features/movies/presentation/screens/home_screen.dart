@@ -109,57 +109,62 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final dominant = focusedPoster == null
                 ? null
                 : ref.watch(dominantColorProvider(focusedPoster)).valueOrNull;
-            final stageColor = dominant == null
-                ? const Color(0xFF141416)
+
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            final base = isDark
+                ? const Color(0xFF0C0C10)
+                : const Color(0xFFE7E8EE);
+            // The hero fades its bottom into the tinted base so it melts into
+            // the full-screen liquid-glass wash of the active movie's colour.
+            final fadeColor = dominant == null
+                ? base
                 : Color.alphaBlend(
-                    Colors.black.withValues(alpha: 0.55),
-                    dominant,
+                    dominant.withValues(alpha: isDark ? 0.35 : 0.24),
+                    base,
                   );
 
-            return ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.zero,
+            return Stack(
               children: [
-                _HeroHeader(movie: focused, fadeColor: stageColor),
-                // The featured poster strip sits on a stage tinted by the
-                // movie's colour that fades into the page below — no section
-                // label, mirroring a "now showing" carousel that drives the
-                // hero above it.
-                _AnimatedStage(
-                  color: stageColor,
-                  child: Padding(
-                    padding: const EdgeInsets.only(
-                      top: AppSpacing.lg,
-                      bottom: AppSpacing.xl,
-                    ),
-                    child: _PosterStrip(
+                // The active movie's colour washes across the whole screen as
+                // soft, liquid-glass orbs (iOS-style), over the neutral studio
+                // backdrop painted by AppBackground.
+                Positioned.fill(
+                  child: _DominantGlass(color: dominant, isDark: isDark),
+                ),
+                ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  children: [
+                    _HeroHeader(movie: focused, fadeColor: fadeColor),
+                    const SizedBox(height: AppSpacing.lg),
+                    _PosterStrip(
                       movies: movies,
                       focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
                       onFocusChanged: (i) =>
                           setState(() => _focusedIndex = i),
                       onTap: _openDetails,
                     ),
-                  ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    _MovieRail(
+                      title: 'Popular',
+                      provider: popularProvider,
+                      onTap: _openDetails,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    _MovieRail(
+                      title: 'Top rated',
+                      provider: topRatedProvider,
+                      onTap: _openDetails,
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    _MovieRail(
+                      title: 'New releases',
+                      provider: nowPlayingProvider,
+                      onTap: _openDetails,
+                    ),
+                    SizedBox(height: bottomClearance),
+                  ],
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                _MovieRail(
-                  title: 'Popular',
-                  provider: popularProvider,
-                  onTap: _openDetails,
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-                _MovieRail(
-                  title: 'Top rated',
-                  provider: topRatedProvider,
-                  onTap: _openDetails,
-                ),
-                const SizedBox(height: AppSpacing.xxl),
-                _MovieRail(
-                  title: 'New releases',
-                  provider: nowPlayingProvider,
-                  onTap: _openDetails,
-                ),
-                SizedBox(height: bottomClearance),
               ],
             );
           },
@@ -594,26 +599,76 @@ class _GlassArrowBar extends StatelessWidget {
 /// and fading to transparent at the bottom so it melts into the page below.
 /// Because it lives in the scroll content, the stage travels with the strip,
 /// and its colour cross-fades whenever the active movie changes.
-class _AnimatedStage extends StatelessWidget {
-  const _AnimatedStage({required this.color, required this.child});
+/// A full-screen wash of the active movie's colour rendered as soft, liquid
+/// "glass" orbs bleeding in from three points, so the whole screen takes on the
+/// featured movie's hue over the neutral studio backdrop. The base is left
+/// transparent so [AppBackground]'s canvas shows through, and the colour
+/// cross-fades whenever the active movie changes.
+class _DominantGlass extends StatelessWidget {
+  const _DominantGlass({required this.color, required this.isDark});
+
+  final Color? color;
+  final bool isDark;
+
+  @override
+  Widget build(BuildContext context) {
+    final dominant = color;
+    if (dominant == null) return const SizedBox.shrink();
+    final strong = dominant.withValues(alpha: isDark ? 0.34 : 0.26);
+    final soft = dominant.withValues(alpha: isDark ? 0.24 : 0.18);
+
+    return IgnorePointer(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final h = constraints.maxHeight;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                top: -150,
+                right: -120,
+                child: _GlassOrb(color: strong, size: 540),
+              ),
+              Positioned(
+                top: h * 0.32,
+                left: -160,
+                child: _GlassOrb(color: soft, size: 460),
+              ),
+              Positioned(
+                bottom: -180,
+                right: -110,
+                child: _GlassOrb(color: strong, size: 520),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// A soft radial glow disc: fades from [color] at its centre to transparent.
+/// Its colour animates so a change of active movie flows rather than jumps.
+class _GlassOrb extends StatelessWidget {
+  const _GlassOrb({required this.color, required this.size});
 
   final Color color;
-  final Widget child;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 550),
+      duration: const Duration(milliseconds: 600),
       curve: Curves.easeOut,
+      width: size,
+      height: size,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [color, color, Colors.transparent],
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withValues(alpha: 0), Colors.transparent],
           stops: const [0, 0.72, 1],
         ),
       ),
-      child: child,
     );
   }
 }
@@ -838,20 +893,28 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    // The strip sits on the dark stage in both themes, so its
-                    // caption stays light.
-                    Text(
-                      movie.title.toUpperCase(),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: focused
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.5),
-                        fontWeight: focused ? FontWeight.w800 : FontWeight.w500,
-                        letterSpacing: focused ? 1.5 : 0.5,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final onSurface = Theme.of(
+                          context,
+                        ).colorScheme.onSurface;
+                        return Text(
+                          movie.title.toUpperCase(),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: focused
+                                    ? onSurface
+                                    : onSurface.withValues(alpha: 0.5),
+                                fontWeight: focused
+                                    ? FontWeight.w800
+                                    : FontWeight.w500,
+                                letterSpacing: focused ? 1.5 : 0.5,
+                              ),
+                        );
+                      },
                     ),
                   ],
                 ),
