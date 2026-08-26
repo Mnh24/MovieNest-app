@@ -119,7 +119,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             final fadeColor = dominant == null
                 ? base
                 : Color.alphaBlend(
-                    dominant.withValues(alpha: isDark ? 0.35 : 0.24),
+                    dominant.withValues(alpha: isDark ? 0.35 : 0.42),
                     base,
                   );
 
@@ -614,8 +614,10 @@ class _DominantGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final dominant = color;
     if (dominant == null) return const SizedBox.shrink();
-    final strong = dominant.withValues(alpha: isDark ? 0.34 : 0.26);
-    final soft = dominant.withValues(alpha: isDark ? 0.24 : 0.18);
+    // Light mode needs a stronger wash than dark to read as coloured glass
+    // against the pale backdrop.
+    final strong = dominant.withValues(alpha: isDark ? 0.34 : 0.5);
+    final soft = dominant.withValues(alpha: isDark ? 0.24 : 0.36);
 
     return IgnorePointer(
       child: LayoutBuilder(
