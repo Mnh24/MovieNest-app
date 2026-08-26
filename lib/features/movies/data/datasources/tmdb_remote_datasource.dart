@@ -25,6 +25,21 @@ class TmdbRemoteDataSource {
     });
   }
 
+  Future<List<Movie>> getPopular() => _list('/movie/popular');
+
+  Future<List<Movie>> getTopRated() => _list('/movie/top_rated');
+
+  Future<List<Movie>> getNowPlaying() => _list('/movie/now_playing');
+
+  /// Fetches and parses a paginated movie list endpoint (popular, top rated,
+  /// now playing) that all share TMDB's `{ results: [...] }` shape.
+  Future<List<Movie>> _list(String path) {
+    return _guard(() async {
+      final response = await _dio.get<Map<String, dynamic>>(path);
+      return _parseMovieList(response.data);
+    });
+  }
+
   Future<List<Movie>> searchMovies(String query, {CancelToken? cancelToken}) {
     return _guard(() async {
       final response = await _dio.get<Map<String, dynamic>>(

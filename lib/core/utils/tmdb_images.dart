@@ -4,9 +4,18 @@ import '../constants/app_config.dart';
 class TmdbImages {
   const TmdbImages._();
 
+  static String? posterSmall(String? path) =>
+      _url(path, AppConfig.posterSizeSmall);
+
   static String? poster(String? path) => _url(path, AppConfig.posterSize);
 
+  static String? posterLarge(String? path) =>
+      _url(path, AppConfig.posterSizeLarge);
+
   static String? backdrop(String? path) => _url(path, AppConfig.backdropSize);
+
+  static String? backdropLarge(String? path) =>
+      _url(path, AppConfig.backdropSizeLarge);
 
   static String? profile(String? path) => _url(path, AppConfig.profileSize);
 
