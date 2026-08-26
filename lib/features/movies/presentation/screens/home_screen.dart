@@ -10,7 +10,6 @@ import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/tmdb_images.dart';
 import '../../../../core/widgets/poster_image.dart';
 import '../../../../core/widgets/state_views.dart';
-import '../../../watchlist/presentation/providers/watchlist_provider.dart';
 import '../../../watchlist/presentation/screens/watchlist_screen.dart';
 import '../../domain/entities/movie.dart';
 import '../providers/dominant_color_provider.dart';
@@ -865,40 +864,6 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
   }
 }
 
-/// A compact circular translucent button (watchlist toggle) shown over poster
-/// art. Deliberately avoids [BackdropFilter]: real blur per card multiplies
-/// GPU cost across every rail and is a common cause of dropped/blank frames
-/// while scrolling on web, so a solid translucent scrim is used instead.
-class _MiniGlassButton extends StatelessWidget {
-  const _MiniGlassButton({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.black.withValues(alpha: 0.42),
-      shape: const CircleBorder(
-        side: BorderSide(color: Colors.white24, width: 1),
-      ),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: Icon(icon, size: 16, color: color),
-        ),
-      ),
-    );
-  }
-}
-
 /// A left-aligned section title used above each horizontal rail.
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.title});
@@ -978,10 +943,10 @@ class _MovieRail extends ConsumerWidget {
   }
 }
 
-/// A single premium poster card used in the catalog rails: portrait art with a
-/// bottom gradient, an inline rating, a watchlist toggle, a title beneath, and
-/// a subtle press-scale for tactile feedback.
-class _RailCard extends ConsumerWidget {
+/// A clean catalog-rail poster card matching the featured strip's style:
+/// rounded artwork lifted by a soft shadow, with the title and a small rating
+/// · year line beneath — no overlays on the poster itself.
+class _RailCard extends StatelessWidget {
   const _RailCard({
     required this.movie,
     required this.heroTag,
@@ -993,12 +958,14 @@ class _RailCard extends ConsumerWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final saved = ref.watch(isInWatchlistProvider(movie.id));
-    final rating = movie.formattedRating;
-
+  Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final rating = movie.formattedRating;
     final year = movie.releaseYear;
+    final metaStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+      fontWeight: FontWeight.w500,
+    );
 
     return SizedBox(
       width: 132,
@@ -1010,10 +977,10 @@ class _RailCard extends ConsumerWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.3),
+                      color: Colors.black.withValues(alpha: 0.28),
                       blurRadius: 18,
                       spreadRadius: -6,
                       offset: const Offset(0, 10),
@@ -1021,75 +988,13 @@ class _RailCard extends ConsumerWidget {
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(22),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Hero(
-                        tag: heroTag,
-                        child: PosterImage(
-                          url: TmdbImages.posterSmall(movie.posterPath),
-                          memCacheWidth: 342,
-                        ),
-                      ),
-                      const DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, Color(0x99000000)],
-                            stops: [0.58, 1],
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        right: AppSpacing.sm,
-                        top: AppSpacing.sm,
-                        child: _MiniGlassButton(
-                          icon: saved
-                              ? Icons.favorite_rounded
-                              : Icons.favorite_border_rounded,
-                          color: saved ? Colors.redAccent : Colors.white,
-                          onTap: () => ref
-                              .read(watchlistProvider.notifier)
-                              .toggle(movie),
-                        ),
-                      ),
-                      if (rating != null)
-                        Positioned(
-                          left: AppSpacing.sm,
-                          bottom: AppSpacing.sm,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.5),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(
-                                  Icons.star_rounded,
-                                  size: 12,
-                                  color: Color(0xFFFFC94D),
-                                ),
-                                const SizedBox(width: 3),
-                                Text(
-                                  rating,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
+                  borderRadius: BorderRadius.circular(24),
+                  child: Hero(
+                    tag: heroTag,
+                    child: PosterImage(
+                      url: TmdbImages.posterSmall(movie.posterPath),
+                      memCacheWidth: 342,
+                    ),
                   ),
                 ),
               ),
@@ -1104,16 +1009,23 @@ class _RailCard extends ConsumerWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
-            if (year != null)
-              Text(
-                year,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                if (rating != null) ...[
+                  const Icon(
+                    Icons.star_rounded,
+                    size: 13,
+                    color: Color(0xFFFFC94D),
+                  ),
+                  const SizedBox(width: 3),
+                  Text(rating, style: metaStyle),
+                ],
+                if (rating != null && year != null)
+                  Text('  ·  ', style: metaStyle),
+                if (year != null) Text(year, style: metaStyle),
+              ],
+            ),
           ],
         ),
       ),
