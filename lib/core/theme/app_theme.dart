@@ -160,6 +160,18 @@ class AppBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final brightness = Theme.of(context).brightness;
+    final isDark = brightness == Brightness.dark;
+
+    // Soft ambient colour "orbs" bleeding in from the corners give the black
+    // canvas a frosted-glass depth (light diffusing behind glass) instead of a
+    // flat fill. Kept low-opacity so content stays the focus.
+    final glowA = isDark
+        ? const Color(0xFF7C5CFC).withValues(alpha: 0.16)
+        : const Color(0xFF7C5CFC).withValues(alpha: 0.14);
+    final glowB = isDark
+        ? const Color(0xFF3F6BFF).withValues(alpha: 0.14)
+        : const Color(0xFF63C7FF).withValues(alpha: 0.12);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -168,7 +180,47 @@ class AppBackground extends StatelessWidget {
           colors: AppTheme.gradientFor(brightness),
         ),
       ),
-      child: child,
+      child: Stack(
+        children: [
+          Positioned(
+            top: -140,
+            left: -110,
+            child: _AmbientOrb(color: glowA, size: 380),
+          ),
+          Positioned(
+            bottom: -160,
+            right: -120,
+            child: _AmbientOrb(color: glowB, size: 420),
+          ),
+          Positioned.fill(child: child),
+        ],
+      ),
+    );
+  }
+}
+
+/// A soft radial glow disc used as ambient light behind the frosted-glass
+/// canvas. Fades from [color] at its centre to transparent at the edge.
+class _AmbientOrb extends StatelessWidget {
+  const _AmbientOrb({required this.color, required this.size});
+
+  final Color color;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [color, color.withValues(alpha: 0), Colors.transparent],
+            stops: const [0, 0.7, 1],
+          ),
+        ),
+      ),
     );
   }
 }
