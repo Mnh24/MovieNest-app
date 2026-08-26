@@ -13,24 +13,27 @@ class AppTheme {
   static const Color _seed = Color(0xFF7C5CFC);
   // Near-black "glass" tones for dark mode: a neutral, slightly cool black for
   // the canvas and a faintly lighter charcoal for glass surfaces/cards.
-  static const Color _darkBackground = Color(0xFF09090B);
-  static const Color _darkSurface = Color(0xFF17171B);
-  static const Color _lightSurface = Color(0xFFF3EEFF);
+  static const Color _darkBackground = Color(0xFF0C0C10);
+  static const Color _darkSurface = Color(0xFF23242B);
+  static const Color _lightSurface = Color(0xFFFFFFFF);
 
   /// A rich, non-flat backdrop gradient shown behind every screen.
   ///
   /// Kept separate from [ThemeData.scaffoldBackgroundColor] (which only
   /// accepts a solid colour) so screens can paint it via [AppBackground].
+  // Neutral, softly-graded "studio backdrop" tones — a charcoal glass canvas
+  // in dark mode and a soft light-grey one in light mode. Soft light-leak orbs
+  // (see [AppBackground]) sit over these to create the frosted, cloudy depth.
   static const List<Color> darkBackgroundGradient = [
-    Color(0xFF121214),
-    Color(0xFF0A0A0C),
-    Color(0xFF050506),
+    Color(0xFF1B1C22),
+    Color(0xFF131318),
+    Color(0xFF0B0B0F),
   ];
 
   static const List<Color> lightBackgroundGradient = [
-    Color(0xFFFDFCFF),
-    Color(0xFFF4F1FB),
-    Color(0xFFEDE8F7),
+    Color(0xFFF1F2F6),
+    Color(0xFFE7E8EE),
+    Color(0xFFDBDCE4),
   ];
 
   static ThemeData light() => _build(Brightness.light);
@@ -162,35 +165,35 @@ class AppBackground extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     final isDark = brightness == Brightness.dark;
 
-    // Soft ambient colour "orbs" bleeding in from the corners give the black
-    // canvas a frosted-glass depth (light diffusing behind glass) instead of a
-    // flat fill. Kept low-opacity so content stays the focus.
-    final glowA = isDark
-        ? const Color(0xFF7C5CFC).withValues(alpha: 0.16)
-        : const Color(0xFF7C5CFC).withValues(alpha: 0.14);
-    final glowB = isDark
-        ? const Color(0xFF3F6BFF).withValues(alpha: 0.14)
-        : const Color(0xFF63C7FF).withValues(alpha: 0.12);
+    // Soft neutral light-leak "orbs" over a diagonally-graded canvas create the
+    // cloudy, frosted-glass studio backdrop: a bright white highlight and a
+    // gentle shadow in light mode; two soft grey light diffusions in dark mode.
+    final highlight = isDark
+        ? Colors.white.withValues(alpha: 0.08)
+        : Colors.white.withValues(alpha: 0.85);
+    final lowlight = isDark
+        ? Colors.white.withValues(alpha: 0.05)
+        : const Color(0xFFC7CAD6).withValues(alpha: 0.6);
 
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
           colors: AppTheme.gradientFor(brightness),
         ),
       ),
       child: Stack(
         children: [
           Positioned(
-            top: -140,
-            left: -110,
-            child: _AmbientOrb(color: glowA, size: 380),
+            top: -170,
+            left: -130,
+            child: _AmbientOrb(color: highlight, size: 480),
           ),
           Positioned(
-            bottom: -160,
-            right: -120,
-            child: _AmbientOrb(color: glowB, size: 420),
+            bottom: -190,
+            right: -140,
+            child: _AmbientOrb(color: lowlight, size: 460),
           ),
           Positioned.fill(child: child),
         ],
