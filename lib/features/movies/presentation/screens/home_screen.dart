@@ -501,11 +501,12 @@ class _ThemeToggleButton extends ConsumerWidget {
   }
 }
 
-/// A circular liquid-glass arrow shown on the active poster; tapping it opens
-/// the movie's details. Only one is on screen at a time (the focused card),
-/// so its real blur is inexpensive.
-class _GlassArrowButton extends StatelessWidget {
-  const _GlassArrowButton({required this.onTap});
+/// A full-width liquid-glass bar spanning the bottom of the active poster;
+/// tapping it opens the movie's details. Only one is on screen at a time (the
+/// focused card), so its real blur is inexpensive. Its bottom corners are
+/// clipped to the card's rounded corners by the parent [ClipRRect].
+class _GlassArrowBar extends StatelessWidget {
+  const _GlassArrowBar({required this.onTap});
 
   final VoidCallback onTap;
 
@@ -513,27 +514,41 @@ class _GlassArrowButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'View details',
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Material(
-            color: Colors.white.withValues(alpha: 0.22),
-            shape: CircleBorder(
-              side: BorderSide(
-                color: Colors.white.withValues(alpha: 0.5),
-                width: 1.2,
-              ),
-            ),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onTap,
-              child: const Padding(
-                padding: EdgeInsets.all(10),
-                child: Icon(
-                  Icons.arrow_forward_rounded,
-                  color: Colors.white,
-                  size: 22,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Material(
+          color: Colors.white.withValues(alpha: 0.18),
+          child: InkWell(
+            onTap: onTap,
+            child: Container(
+              height: 48,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'DETAILS',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  SizedBox(width: AppSpacing.sm),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ],
               ),
             ),
           ),
@@ -571,7 +586,7 @@ class _HeroPill extends StatelessWidget {
 /// A horizontally scrolling strip of poster thumbnails beneath the hero;
 /// tapping one updates the focused (hero) movie, mirroring how a "now
 /// showing" carousel drives the header above it.
-class _PosterStrip extends ConsumerWidget {
+class _PosterStrip extends ConsumerStatefulWidget {
   const _PosterStrip({
     required this.movies,
     required this.focusedIndex,
@@ -585,10 +600,50 @@ class _PosterStrip extends ConsumerWidget {
   final void Function(Movie movie, Object heroTag) onTap;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PosterStrip> createState() => _PosterStripState();
+}
+
+class _PosterStripState extends ConsumerState<_PosterStrip> {
+  final ScrollController _controller = ScrollController();
+
+  static const double _focusedWidth = 178;
+  static const double _itemWidth = 118;
+  static const double _gap = AppSpacing.md;
+  static const double _lead = AppSpacing.lg;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// Horizontally scrolls the strip (never the page) so the item at [index]
+  /// — which is becoming the focused, wider card — is centred in the viewport.
+  void _centerOn(int index) {
+    if (!_controller.hasClients) return;
+    final position = _controller.position;
+    final leftEdge = _lead + index * (_itemWidth + _gap);
+    final itemCentre = leftEdge + _focusedWidth / 2;
+    final target = (itemCentre - position.viewportDimension / 2).clamp(
+      0.0,
+      position.maxScrollExtent,
+    );
+    _controller.animateTo(
+      target,
+      duration: const Duration(milliseconds: 340),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final movies = widget.movies;
+    final focusedIndex = widget.focusedIndex;
+
     return SizedBox(
       height: 244,
       child: ListView.builder(
+        controller: _controller,
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         itemCount: movies.length,
@@ -601,17 +656,12 @@ class _PosterStrip extends ConsumerWidget {
             child: GestureDetector(
               onTap: () {
                 if (focused) {
-                  onTap(movie, 'home-hero-${movie.id}');
+                  widget.onTap(movie, 'home-hero-${movie.id}');
                 } else {
-                  onFocusChanged(index);
-                  // Slide the tapped poster to the centre of the strip so the
-                  // newly active card is framed in the middle.
-                  Scrollable.ensureVisible(
-                    context,
-                    alignment: 0.5,
-                    duration: const Duration(milliseconds: 320),
-                    curve: Curves.easeOutCubic,
-                  );
+                  widget.onFocusChanged(index);
+                  // Centre the tapped poster within the strip only — a
+                  // horizontal scroll, so the whole page never moves.
+                  _centerOn(index);
                 }
               },
               child: AnimatedContainer(
@@ -659,18 +709,17 @@ class _PosterStrip extends ConsumerWidget {
                                     color: Color(0x40000000),
                                   ),
                                 ),
-                              // Active card: a glass arrow that opens details.
+                              // Active card: a full-width glass bar across the
+                              // bottom whose arrow opens the movie's details.
                               if (focused)
                                 Positioned(
                                   left: 0,
                                   right: 0,
-                                  bottom: AppSpacing.md,
-                                  child: Center(
-                                    child: _GlassArrowButton(
-                                      onTap: () => onTap(
-                                        movie,
-                                        'home-hero-${movie.id}',
-                                      ),
+                                  bottom: 0,
+                                  child: _GlassArrowBar(
+                                    onTap: () => widget.onTap(
+                                      movie,
+                                      'home-hero-${movie.id}',
                                     ),
                                   ),
                                 ),
