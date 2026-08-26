@@ -21,9 +21,10 @@ import 'cast_list_screen.dart';
 /// Full movie detail screen.
 ///
 /// Matches the home screen's hero-card vibe: a full-bleed image up top with
-/// floating circular back/watchlist buttons, and a rounded card overlapping
-/// its bottom edge that carries the title, rating, description and genre
-/// info — capped by a fixed bottom action bar.
+/// floating circular back/watchlist buttons, and a single scroll view that
+/// carries the title, rating, an inline "Watch Trailer" action, the overview
+/// and genre info. Everything flows in one scroll so no content is clipped
+/// behind a pinned footer.
 class MovieDetailsScreen extends ConsumerWidget {
   const MovieDetailsScreen({super.key, required this.movie, this.heroTag});
 
@@ -60,7 +61,7 @@ class MovieDetailsScreen extends ConsumerWidget {
             // padding keeps the last content clear of the pinned action bar.
             ListView(
               padding: EdgeInsets.only(
-                bottom: MediaQuery.paddingOf(context).bottom + 108,
+                bottom: MediaQuery.paddingOf(context).bottom + AppSpacing.xxl,
               ),
               children: [
                 _HeroImage(movie: movie, heroTag: heroTag),
@@ -76,13 +77,6 @@ class MovieDetailsScreen extends ConsumerWidget {
               right: AppSpacing.lg,
               top: MediaQuery.paddingOf(context).top + AppSpacing.sm,
               child: _TopBar(movie: movie),
-            ),
-            // The primary action stays pinned to the bottom of the screen.
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: _BottomBar(movie: movie),
             ),
           ],
         ),
@@ -190,7 +184,7 @@ class _HeroImage extends StatelessWidget {
           );
 
     return SizedBox(
-      height: 460,
+      height: 380,
       width: double.infinity,
       child: Stack(
         fit: StackFit.expand,
@@ -305,9 +299,9 @@ void showTrailerUnavailable(BuildContext context) {
     );
 }
 
-/// The rounded card overlapping the hero image's bottom edge: eyebrow badge,
-/// title, rating, overview, genre chips, an info row and (via its scrollable
-/// body) the cast section — capped by the fixed bottom action bar.
+/// The content flowing beneath the hero image: eyebrow badge, title, rating,
+/// an inline "Watch Trailer" action, the overview, genre chips, an info row
+/// and the cast section — all part of the page's single scroll view.
 class _DetailsCard extends StatelessWidget {
   const _DetailsCard({
     required this.movie,
@@ -349,6 +343,15 @@ class _DetailsCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           _RatingRow(movie: movie),
           const SizedBox(height: AppSpacing.lg),
+          _ActionRow(movie: movie),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            'Overview',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             (movie.overview == null || movie.overview!.isEmpty)
                 ? 'No overview is available for this movie.'
@@ -614,67 +617,47 @@ class _DetailsUnavailable extends StatelessWidget {
   }
 }
 
-/// Fixed bottom bar mirroring the reference's stepper + "Add to Cart" row:
-/// a rounded watchlist toggle on the left, a wide "Watch Trailer" pill on
-/// the right.
-class _BottomBar extends ConsumerWidget {
-  const _BottomBar({required this.movie});
+/// The primary call-to-action, placed inline right under the title/rating so
+/// it's prominent without pinning a bar over the content: a high-contrast
+/// "Watch Trailer" pill on the left and a rounded watchlist toggle on the
+/// right. Flowing it into the scroll view means the overview and everything
+/// below it is never clipped behind a fixed footer.
+class _ActionRow extends ConsumerWidget {
+  const _ActionRow({required this.movie});
 
   final Movie movie;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final base = isDark ? const Color(0xFF0C0C10) : const Color(0xFFE7E8EE);
     final saved = ref.watch(isInWatchlistProvider(movie.id));
-    final bottomInset = MediaQuery.paddingOf(context).bottom;
     // A high-contrast neutral CTA (light-on-dark / dark-on-light) reads far
     // more premium than a saturated accent button.
     final ctaColor = isDark ? Colors.white : const Color(0xFF141418);
     final ctaText = isDark ? const Color(0xFF141418) : Colors.white;
 
-    return Container(
-      // Fade the bar into the page instead of sitting on a hard bordered slab.
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.xl,
-        AppSpacing.xxl,
-        AppSpacing.xl,
-        bottomInset + AppSpacing.lg,
-      ),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [base.withValues(alpha: 0), base.withValues(alpha: 0.9), base],
-          stops: const [0, 0.55, 1],
-        ),
-      ),
-      child: Row(
-        children: [
-          _WatchlistToggle(movie: movie, saved: saved),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: FilledButton.icon(
-              onPressed: () => showTrailerUnavailable(context),
-              style: FilledButton.styleFrom(
-                backgroundColor: ctaColor,
-                foregroundColor: ctaText,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: const StadiumBorder(),
-              ),
-              icon: const Icon(Icons.play_arrow_rounded, size: 22),
-              label: const Text(
-                'Watch Trailer',
-                style: TextStyle(
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.3,
-                ),
-              ),
+    return Row(
+      children: [
+        Expanded(
+          child: FilledButton.icon(
+            onPressed: () => showTrailerUnavailable(context),
+            style: FilledButton.styleFrom(
+              backgroundColor: ctaColor,
+              foregroundColor: ctaText,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: const StadiumBorder(),
+            ),
+            icon: const Icon(Icons.play_arrow_rounded, size: 22),
+            label: const Text(
+              'Watch Trailer',
+              style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.3),
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        _WatchlistToggle(movie: movie, saved: saved),
+      ],
     );
   }
 }
