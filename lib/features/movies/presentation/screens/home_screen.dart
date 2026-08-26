@@ -972,7 +972,7 @@ class _MovieRail extends ConsumerWidget {
       children: [
         _SectionHeader(title: title),
         const SizedBox(height: AppSpacing.md),
-        SizedBox(height: 232, child: rail),
+        SizedBox(height: 250, child: rail),
       ],
     );
   }
@@ -997,6 +997,9 @@ class _RailCard extends ConsumerWidget {
     final saved = ref.watch(isInWatchlistProvider(movie.id));
     final rating = movie.formattedRating;
 
+    final scheme = Theme.of(context).colorScheme;
+    final year = movie.releaseYear;
+
     return SizedBox(
       width: 132,
       child: _PressableScale(
@@ -1005,71 +1008,89 @@ class _RailCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.lg * 1.125),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Hero(
-                      tag: heroTag,
-                      child: PosterImage(
-                        url: TmdbImages.posterSmall(movie.posterPath),
-                        memCacheWidth: 342,
-                      ),
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.3),
+                      blurRadius: 18,
+                      spreadRadius: -6,
+                      offset: const Offset(0, 10),
                     ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.6),
-                          ],
-                          stops: const [0.55, 1],
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: AppSpacing.sm,
-                      top: AppSpacing.sm,
-                      child: _MiniGlassButton(
-                        icon: saved
-                            ? Icons.favorite_rounded
-                            : Icons.favorite_border_rounded,
-                        color: saved ? Colors.redAccent : Colors.white,
-                        onTap: () =>
-                            ref.read(watchlistProvider.notifier).toggle(movie),
-                      ),
-                    ),
-                    if (rating != null)
-                      Positioned(
-                        left: AppSpacing.sm,
-                        bottom: AppSpacing.sm,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.star_rounded,
-                              size: 13,
-                              color: Color(0xFFFFC94D),
-                            ),
-                            const SizedBox(width: 2),
-                            Text(
-                              rating,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 11,
-                                shadows: [
-                                  Shadow(blurRadius: 4, color: Colors.black54),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                   ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Hero(
+                        tag: heroTag,
+                        child: PosterImage(
+                          url: TmdbImages.posterSmall(movie.posterPath),
+                          memCacheWidth: 342,
+                        ),
+                      ),
+                      const DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Color(0x99000000)],
+                            stops: [0.58, 1],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: AppSpacing.sm,
+                        top: AppSpacing.sm,
+                        child: _MiniGlassButton(
+                          icon: saved
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          color: saved ? Colors.redAccent : Colors.white,
+                          onTap: () => ref
+                              .read(watchlistProvider.notifier)
+                              .toggle(movie),
+                        ),
+                      ),
+                      if (rating != null)
+                        Positioned(
+                          left: AppSpacing.sm,
+                          bottom: AppSpacing.sm,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.star_rounded,
+                                  size: 12,
+                                  color: Color(0xFFFFC94D),
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  rating,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1078,11 +1099,21 @@ class _RailCard extends ConsumerWidget {
               movie.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: scheme.onSurface,
+                fontWeight: FontWeight.w700,
               ),
             ),
+            if (year != null)
+              Text(
+                year,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
           ],
         ),
       ),
