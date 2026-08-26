@@ -23,6 +23,9 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
+# launch.json contains the TMDB API key via --dart-define; keep it local only.
+.vscode/launch.json
+
 # Flutter/Dart/Pub related
 **/doc/api/
 **/ios/Flutter/.last_build_id
@@ -81,6 +84,9 @@ unlinked_spec.ds
 
 # Local configuration and secrets
 .env
+
+# Firebase CLI local cache
+.firebase/
 
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3
