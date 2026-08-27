@@ -28,11 +28,16 @@ class AppConfig {
   /// TMDB API key injected via `--dart-define` (direct/dev path only).
   static const String tmdbApiKey = String.fromEnvironment('TMDB_API_KEY');
 
+  /// TMDB API Read Access Token (v4 Bearer token) injected via `--dart-define`.
+  static const String tmdbReadAccessToken =
+      String.fromEnvironment('TMDB_READ_ACCESS_TOKEN');
+
   /// Whether the app should route TMDB calls through the backend proxy.
   static bool get useProxy => tmdbProxyUrl.isNotEmpty;
 
-  /// Whether the app has a usable TMDB configuration (proxy or direct key).
-  static bool get isConfigured => useProxy || tmdbApiKey.isNotEmpty;
+  /// Whether the app has a usable TMDB configuration (proxy, direct key, or access token).
+  static bool get isConfigured =>
+      useProxy || tmdbApiKey.isNotEmpty || tmdbReadAccessToken.isNotEmpty;
 
   static const String tmdbBaseUrl = 'https://api.themoviedb.org/3';
 

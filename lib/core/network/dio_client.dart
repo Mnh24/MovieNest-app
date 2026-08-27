@@ -22,10 +22,16 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          if (!AppConfig.useProxy) {
+            if (AppConfig.tmdbReadAccessToken.isNotEmpty) {
+              options.headers['Authorization'] =
+                  'Bearer ${AppConfig.tmdbReadAccessToken}';
+            } else if (AppConfig.tmdbApiKey.isNotEmpty) {
+              options.queryParameters['api_key'] = AppConfig.tmdbApiKey;
+            }
+          }
+
           options.queryParameters = {
-            // Only the direct/dev path attaches the key on the client. When a
-            // proxy is used the key lives server-side and is never sent here.
-            if (!AppConfig.useProxy) 'api_key': AppConfig.tmdbApiKey,
             'language': 'en-US',
             ...options.queryParameters,
           };

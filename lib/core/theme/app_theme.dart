@@ -263,11 +263,11 @@ class AppBackground extends StatelessWidget {
     // visible cool-blue and violet diffusions (light glowing behind glass);
     // light mode uses a bright white highlight and a gentle grey shadow.
     final highlight = isDark
-        ? const Color(0xFF9FB4FF).withValues(alpha: 0.16)
-        : Colors.white.withValues(alpha: 0.85);
+        ? const Color(0xFF818CF8).withValues(alpha: 0.35)
+        : Colors.white.withValues(alpha: 0.95);
     final lowlight = isDark
-        ? const Color(0xFF8B6DFF).withValues(alpha: 0.16)
-        : const Color(0xFFC7CAD6).withValues(alpha: 0.6);
+        ? const Color(0xFFA855F7).withValues(alpha: 0.32)
+        : const Color(0xFFB0B7C6).withValues(alpha: 0.75);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -280,14 +280,14 @@ class AppBackground extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            top: -170,
-            left: -130,
-            child: _AmbientOrb(color: highlight, size: 480),
+            top: -140,
+            left: -110,
+            child: _AmbientOrb(color: highlight, size: 540),
           ),
           Positioned(
-            bottom: -190,
-            right: -140,
-            child: _AmbientOrb(color: lowlight, size: 460),
+            bottom: -160,
+            right: -110,
+            child: _AmbientOrb(color: lowlight, size: 520),
           ),
           Positioned.fill(child: child),
         ],

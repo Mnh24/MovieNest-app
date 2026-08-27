@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/error_mapper.dart';
+import '../../../../core/routes/glass_page_route.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/tmdb_images.dart';
 import '../../../../core/widgets/poster_image.dart';
@@ -94,11 +95,14 @@ class _DetailsGlow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dominant = color;
-    if (dominant == null) return const SizedBox.shrink();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final strong = dominant.withValues(alpha: isDark ? 0.5 : 0.5);
-    final soft = dominant.withValues(alpha: isDark ? 0.36 : 0.4);
+    final dominant =
+        color ?? (isDark ? const Color(0xFF6366F1) : const Color(0xFF818CF8));
+
+    // Vivid, high-visibility liquid glass washes matching the home screen's cinematic atmosphere.
+    final strong = dominant.withValues(alpha: isDark ? 0.75 : 0.82);
+    final medium = dominant.withValues(alpha: isDark ? 0.55 : 0.65);
+    final soft = dominant.withValues(alpha: isDark ? 0.45 : 0.55);
 
     return IgnorePointer(
       child: RepaintBoundary(
@@ -108,16 +112,29 @@ class _DetailsGlow extends StatelessWidget {
             return Stack(
               clipBehavior: Clip.none,
               children: [
-                // Around the top of the card so the wash glows through it.
                 Positioned(
-                  top: h * 0.42,
-                  right: -120,
-                  child: _Orb(color: strong, size: 540),
+                  top: h * 0.25,
+                  right: -100,
+                  child: _Orb(color: strong, size: 660),
                 ),
                 Positioned(
-                  bottom: -160,
-                  left: -130,
-                  child: _Orb(color: soft, size: 500),
+                  top: h * 0.55,
+                  left: -120,
+                  child: _Orb(color: medium, size: 580),
+                ),
+                Positioned(
+                  bottom: -140,
+                  right: -80,
+                  child: _Orb(color: soft, size: 600),
+                ),
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                    child: Container(
+                      color: (isDark ? Colors.black : Colors.white)
+                          .withValues(alpha: isDark ? 0.12 : 0.08),
+                    ),
+                  ),
                 ),
               ],
             );
@@ -164,7 +181,7 @@ class _HeroImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final base = isDark ? const Color(0xFF0C0C10) : const Color(0xFFE7E8EE);
+    final bg = Theme.of(context).scaffoldBackgroundColor;
     final art = PosterImage(
       url:
           TmdbImages.backdrop(movie.backdropPath) ??
@@ -201,8 +218,8 @@ class _HeroImage extends StatelessWidget {
               ),
             ),
           ),
-          // Fade the bottom into the page so the backdrop melts into the
-          // content instead of ending on a hard card edge.
+          // Fade the bottom smoothly so the backdrop art stays vivid and dark
+          // without a washed-out white band over the lower image in light mode.
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -210,10 +227,10 @@ class _HeroImage extends StatelessWidget {
                 end: Alignment.bottomCenter,
                 colors: [
                   Colors.transparent,
-                  base.withValues(alpha: 0.7),
-                  base,
+                  Colors.black.withValues(alpha: isDark ? 0.6 : 0.45),
+                  isDark ? const Color(0xFF0C0C10) : bg,
                 ],
-                stops: const [0.5, 0.85, 1],
+                stops: const [0.55, 0.88, 1],
               ),
             ),
           ),
@@ -729,7 +746,7 @@ class _CastSection extends StatelessWidget {
                 if (cast.length > preview.length)
                   TextButton(
                     onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
+                      GlassPageRoute<void>(
                         builder: (_) =>
                             CastListScreen(movieTitle: movie.title, cast: cast),
                       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/routes/glass_page_route.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../movies/domain/entities/movie.dart';
@@ -68,7 +69,7 @@ class _WatchlistTile extends ConsumerWidget {
       movie: movie,
       heroTag: heroTag,
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
+        GlassPageRoute<void>(
           builder: (_) => MovieDetailsScreen(movie: movie, heroTag: heroTag),
         ),
       ),

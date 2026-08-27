@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/error_mapper.dart';
+import '../../../../core/routes/glass_page_route.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/theme_provider.dart';
 import '../../../../core/utils/tmdb_images.dart';
@@ -61,7 +62,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _openDetails(Movie movie, Object heroTag) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      GlassPageRoute<void>(
         builder: (_) => MovieDetailsScreen(movie: movie, heroTag: heroTag),
       ),
     );
@@ -212,7 +213,7 @@ class _HeroHeader extends ConsumerWidget {
     // first screen, clamped so it stays cinematic on short and very tall
     // devices alike.
     final screenHeight = MediaQuery.sizeOf(context).height;
-    final heroHeight = (screenHeight * 0.64).clamp(460.0, 620.0).toDouble();
+    final heroHeight = (screenHeight * 0.68).clamp(520.0, 680.0).toDouble();
 
     return SizedBox(
       height: heroHeight,
@@ -253,7 +254,7 @@ class _HeroHeader extends ConsumerWidget {
             alignment: const Alignment(0, -0.2),
             child: _GlassPlayButton(
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
+                GlassPageRoute<void>(
                   builder: (_) => MovieDetailsScreen(
                     movie: movie,
                     heroTag: 'home-hero-${movie.id}',
@@ -271,7 +272,7 @@ class _HeroHeader extends ConsumerWidget {
           Positioned(
             left: 0,
             right: 0,
-            bottom: AppSpacing.xl,
+            bottom: AppSpacing.lg,
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 480),
@@ -286,140 +287,140 @@ class _HeroHeader extends ConsumerWidget {
                       const Text(
                         'NEW · MOVIE',
                         textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFFF2C94C),
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
-                    letterSpacing: 2.5,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  movie.title.toUpperCase(),
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    height: 1.0,
-                    letterSpacing: 1.5,
-                    fontSize: 44,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Flexible(
-                      child: _HeroPill(
-                        color: Colors.black.withValues(alpha: 0.45),
-                        child: const Text(
-                          'Populer with friends',
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    _HeroPill(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      child: const Text(
-                        '18+',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
+                          color: Color(0xFFF2C94C),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          letterSpacing: 2.2,
                         ),
                       ),
-                    ),
-                    if (rating != null) ...[
-                      const SizedBox(width: AppSpacing.md),
-                      _HeroPill(
-                        color: const Color(0xFFF2C94C),
-                        child: Text.rich(
-                          TextSpan(
-                            children: [
-                              TextSpan(
-                                text: rating,
-                                style: const TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const TextSpan(
-                                text: '/10',
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        movie.title.toUpperCase(),
+                        maxLines: 2,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                          letterSpacing: 1.2,
+                          fontSize: 30,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Flexible(
+                            child: _HeroPill(
+                              color: Colors.black.withValues(alpha: 0.45),
+                              child: const Text(
+                                'Popular with friends',
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 9,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 12,
                                 ),
                               ),
-                            ],
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          _HeroPill(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            child: const Text(
+                              '18+',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          if (rating != null) ...[
+                            const SizedBox(width: AppSpacing.sm),
+                            _HeroPill(
+                              color: const Color(0xFFF2C94C),
+                              child: Text.rich(
+                                TextSpan(
+                                  children: [
+                                    TextSpan(
+                                      text: rating,
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    const TextSpan(
+                                      text: '/10',
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 9,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        [
+                          if (year != null) year,
+                          if (genres != null && genres.isNotEmpty) genres,
+                          'Dolby Digital',
+                        ].join('  •  '),
+                        maxLines: 1,
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Container(
+                        height: 1,
+                        width: 160,
+                        color: const Color(0xFFF5261E).withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      FilledButton(
+                        onPressed: () => Navigator.of(context).push(
+                          GlassPageRoute<void>(
+                            builder: (_) => MovieDetailsScreen(
+                              movie: movie,
+                              heroTag: 'home-hero-${movie.id}',
+                            ),
+                          ),
+                        ),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFFF5261E),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 36,
+                            vertical: 14,
+                          ),
+                        ),
+                        child: const Text(
+                          'BUY TICKET',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 2,
+                            fontSize: 14,
                           ),
                         ),
                       ),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  [
-                    if (year != null) year,
-                    if (genres != null && genres.isNotEmpty) genres,
-                    'Datasat, Dolby Digital',
-                  ].join('  •  '),
-                  maxLines: 1,
-                  textAlign: TextAlign.center,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Container(
-                  height: 1,
-                  width: 200,
-                  color: const Color(0xFFF5261E).withValues(alpha: 0.5),
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => MovieDetailsScreen(
-                        movie: movie,
-                        heroTag: 'home-hero-${movie.id}',
-                      ),
-                    ),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFFF5261E),
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 44,
-                      vertical: 18,
-                    ),
-                  ),
-                  child: const Text(
-                    'BUY TICKET',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 2,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
                     ],
                   ),
                 ),
@@ -445,7 +446,7 @@ class _HomeTopBar extends StatelessWidget {
         Expanded(
           child: GestureDetector(
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const SearchScreen()),
+              GlassPageRoute<void>(builder: (_) => const SearchScreen()),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(23),
@@ -492,7 +493,7 @@ class _HomeTopBar extends StatelessWidget {
           icon: Icons.bookmark_rounded,
           tooltip: 'Watchlist',
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute<void>(builder: (_) => const WatchlistScreen()),
+            GlassPageRoute<void>(builder: (_) => const WatchlistScreen()),
           ),
         ),
       ],
@@ -718,31 +719,42 @@ class _DominantGlass extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dominant = color;
-    if (dominant == null) return const SizedBox.shrink();
-    // Light mode needs a stronger wash than dark to read as coloured glass
-    // against the pale backdrop; dark mode is boosted so the wash is clearly
-    // visible against the near-black canvas too.
-    final strong = dominant.withValues(alpha: isDark ? 0.5 : 0.62);
-    final soft = dominant.withValues(alpha: isDark ? 0.38 : 0.46);
+    final dominant =
+        color ?? (isDark ? const Color(0xFF6366F1) : const Color(0xFF818CF8));
 
-    // RepaintBoundary caches this full-screen wash as its own layer, so
-    // scrolling the page composites the cached raster instead of repainting the
-    // gradients every frame.
+    // Vivid, high-visibility liquid glass washes that pop across both light and dark modes.
+    final strong = dominant.withValues(alpha: isDark ? 0.75 : 0.82);
+    final medium = dominant.withValues(alpha: isDark ? 0.55 : 0.65);
+    final soft = dominant.withValues(alpha: isDark ? 0.45 : 0.55);
+
     return RepaintBoundary(
       child: IgnorePointer(
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             Positioned(
-              top: -150,
-              right: -130,
-              child: _GlassOrb(color: strong, size: 560),
+              top: -120,
+              right: -100,
+              child: _GlassOrb(color: strong, size: 660),
             ),
             Positioned(
-              bottom: -170,
+              top: 320,
               left: -140,
-              child: _GlassOrb(color: soft, size: 520),
+              child: _GlassOrb(color: medium, size: 580),
+            ),
+            Positioned(
+              bottom: -150,
+              right: -80,
+              child: _GlassOrb(color: soft, size: 600),
+            ),
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                child: Container(
+                  color: (isDark ? Colors.black : Colors.white)
+                      .withValues(alpha: isDark ? 0.12 : 0.08),
+                ),
+              ),
             ),
           ],
         ),
@@ -1138,12 +1150,22 @@ class _RailCard extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
-                  child: Hero(
-                    tag: heroTag,
-                    child: PosterImage(
-                      url: TmdbImages.posterSmall(movie.posterPath),
-                      memCacheWidth: 342,
-                    ),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Hero(
+                        tag: heroTag,
+                        child: PosterImage(
+                          url: TmdbImages.posterSmall(movie.posterPath),
+                          memCacheWidth: 342,
+                        ),
+                      ),
+                      Positioned(
+                        top: AppSpacing.sm,
+                        right: AppSpacing.sm,
+                        child: _CardSaveButton(movie: movie),
+                      ),
+                    ],
                   ),
                 ),
               ),
