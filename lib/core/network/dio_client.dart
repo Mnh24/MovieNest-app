@@ -12,7 +12,7 @@ class DioClient {
   static Dio create() {
     final dio = Dio(
       BaseOptions(
-        baseUrl: AppConfig.tmdbBaseUrl,
+        baseUrl: AppConfig.apiBaseUrl,
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
         responseType: ResponseType.json,
@@ -21,17 +21,42 @@ class DioClient {
 
     dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           options.queryParameters = {
-            'api_key': AppConfig.tmdbApiKey,
+            // Only the direct/dev path attaches the key on the client. When a
+            // proxy is used the key lives server-side and is never sent here.
+            if (!AppConfig.useProxy) 'api_key': AppConfig.tmdbApiKey,
             'language': 'en-US',
             ...options.queryParameters,
           };
+
+          // When talking to the proxy, attach a Firebase App Check token so the
+          // backend can verify the request came from a genuine build of this
+          // app. Wired here as a no-op until App Check is enabled in the app
+          // (see SETUP_FIREBASE.md); returns null and is skipped until then.
+          if (AppConfig.useProxy) {
+            final token = await _appCheckToken?.call();
+            if (token != null && token.isNotEmpty) {
+              options.headers['X-Firebase-AppCheck'] = token;
+            }
+          }
+
           handler.next(options);
         },
       ),
     );
 
     return dio;
+  }
+
+  /// Optional hook that returns the current Firebase App Check token.
+  ///
+  /// Kept as an injectable function so the network layer has no hard dependency
+  /// on the Firebase SDK: `main` sets this once App Check is initialised. Until
+  /// then it stays null and the proxy runs with App Check un-enforced.
+  static Future<String?> Function()? _appCheckToken;
+
+  static void setAppCheckTokenProvider(Future<String?> Function()? provider) {
+    _appCheckToken = provider;
   }
 }

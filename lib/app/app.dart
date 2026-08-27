@@ -23,7 +23,7 @@ class MovieApp extends ConsumerWidget {
       themeMode: themeMode,
       builder: (context, child) =>
           AppBackground(child: child ?? const SizedBox.shrink()),
-      home: AppConfig.hasApiKey
+      home: AppConfig.isConfigured
           ? const RootShell()
           : const MissingApiKeyScreen(),
     );

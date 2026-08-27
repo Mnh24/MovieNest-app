@@ -22,25 +22,37 @@ details, and keep a personal watchlist that works completely offline.
 - A free TMDB API key — create one at
   [themoviedb.org](https://www.themoviedb.org/settings/api).
 
-## TMDB API key setup
+## TMDB access
 
-The API key is **never** committed to the repository. It is supplied at build
-time through a Dart compile-time environment variable
-(`String.fromEnvironment('TMDB_API_KEY')`).
+The app can reach TMDB two ways. The key is **never** committed to the repo.
 
-Run the app with:
+### Backend proxy — recommended for release / TestFlight / App Store
+
+Anything embedded in a released binary (including `--dart-define`) can be
+extracted, so public builds should **not** carry the key. Instead the app calls
+a Firebase Cloud Functions proxy that holds the key server-side:
+
+```bash
+flutter build ipa --release --dart-define=TMDB_PROXY_URL=https://<region>-<project>.cloudfunctions.net/tmdb
+```
+
+The proxy (in `functions/`) plus optional Firebase App Check are set up once —
+see **[SETUP_FIREBASE.md](SETUP_FIREBASE.md)** for the full walkthrough.
+
+### Direct key — local development only
+
+Convenient for local runs; the key is embedded in the build, so don't use this
+for public builds:
 
 ```bash
 flutter run --dart-define=TMDB_API_KEY=your_api_key_here
 ```
 
-Build a release the same way:
+Tip: copy `dart_defines.example.json` to `dart_defines.json` (git-ignored) and
+build with `--dart-define-from-file=dart_defines.json` so you never have to
+remember the flags.
 
-```bash
-flutter build apk --dart-define=TMDB_API_KEY=your_api_key_here
-```
-
-If no key is provided, the app shows a clear message explaining how to supply
+If neither is provided, the app shows a clear message explaining how to supply
 one instead of failing with network errors.
 
 ## Running
