@@ -85,8 +85,13 @@ unlinked_spec.ds
 # Local configuration and secrets
 .env
 
-# Firebase CLI local cache
+# Build-time defines file may hold a real TMDB key; keep it local only.
+dart_defines.json
+
+# Firebase CLI local cache and debug logs
 .firebase/
+firebase-debug.log
+functions/node_modules/
 
 # Exceptions to above rules.
 !**/ios/**/default.mode1v3

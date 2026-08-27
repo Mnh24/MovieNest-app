@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../core/theme/app_spacing.dart';
 
-/// Shown when the app is launched without a TMDB API key so the failure mode
-/// is clear and actionable rather than a stream of network errors.
+/// Shown when the app is launched without a TMDB configuration so the failure
+/// mode is clear and actionable rather than a stream of network errors.
 class MissingApiKeyScreen extends StatelessWidget {
   const MissingApiKeyScreen({super.key});
 
@@ -25,14 +25,17 @@ class MissingApiKeyScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text(
-                  'API key required',
+                  'TMDB not configured',
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Provide a TMDB API key at launch:\n\n'
+                  'Point the app at the backend proxy (recommended):\n\n'
+                  'flutter run\n'
+                  '  --dart-define=TMDB_PROXY_URL=your_proxy_url\n\n'
+                  'or, for local dev, pass a TMDB key directly:\n\n'
                   'flutter run --dart-define=TMDB_API_KEY=your_key',
                   textAlign: TextAlign.center,
                   style: theme.textTheme.bodyMedium?.copyWith(

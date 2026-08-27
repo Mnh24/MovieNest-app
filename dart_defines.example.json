@@ -1,0 +1,8 @@
+{
+  "//": "Copy this file to dart_defines.json (git-ignored) and fill in values.",
+  "//proxy": "Preferred: point the app at your deployed Cloud Functions proxy.",
+  "TMDB_PROXY_URL": "https://us-central1-your-firebase-project-id.cloudfunctions.net/tmdb",
+
+  "//key": "Local dev only. Talks to TMDB directly; omit for release builds.",
+  "TMDB_API_KEY": ""
+}

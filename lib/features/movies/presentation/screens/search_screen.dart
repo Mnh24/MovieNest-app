@@ -5,6 +5,7 @@ import '../../../../core/network/error_mapper.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../watchlist/presentation/widgets/watchlist_icon_button.dart';
+import '../../../../core/routes/glass_page_route.dart';
 import '../../domain/entities/movie.dart';
 import '../providers/search_provider.dart';
 import '../widgets/movie_list_skeleton.dart';
@@ -49,7 +50,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   void _openDetails(Movie movie, Object heroTag) {
     _focusNode.unfocus();
     Navigator.of(context).push(
-      MaterialPageRoute<void>(
+      GlassPageRoute<void>(
         builder: (_) => MovieDetailsScreen(movie: movie, heroTag: heroTag),
       ),
     );
