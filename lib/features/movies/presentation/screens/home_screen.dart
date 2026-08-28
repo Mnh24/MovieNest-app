@@ -80,103 +80,103 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         body: RefreshIndicator(
-        onRefresh: _refresh,
-        child: trending.when(
-          loading: () => const _HomeSkeleton(),
-          error: (error, _) => SafeArea(
-            child: _RefreshableMessage(
-              icon: Icons.cloud_off_rounded,
-              title: 'Unable to load movies.',
-              message: messageForError(error),
-              onRetry: () => ref.read(trendingProvider.notifier).refresh(),
+          onRefresh: _refresh,
+          child: trending.when(
+            loading: () => const _HomeSkeleton(),
+            error: (error, _) => SafeArea(
+              child: _RefreshableMessage(
+                icon: Icons.cloud_off_rounded,
+                title: 'Unable to load movies.',
+                message: messageForError(error),
+                onRetry: () => ref.read(trendingProvider.notifier).refresh(),
+              ),
             ),
-          ),
-          data: (movies) {
-            if (movies.isEmpty) {
-              return const SafeArea(
-                child: _RefreshableMessage(
-                  icon: Icons.movie_filter_outlined,
-                  title: 'No trending movies right now.',
-                  message: 'Pull down to refresh and try again.',
-                ),
+            data: (movies) {
+              if (movies.isEmpty) {
+                return const SafeArea(
+                  child: _RefreshableMessage(
+                    icon: Icons.movie_filter_outlined,
+                    title: 'No trending movies right now.',
+                    message: 'Pull down to refresh and try again.',
+                  ),
+                );
+              }
+
+              _precacheHeroArt(movies);
+              final focused = movies[_focusedIndex.clamp(0, movies.length - 1)];
+              final bottomClearance =
+                  MediaQuery.paddingOf(context).bottom + AppSpacing.xl;
+
+              // Build a rich, dark "stage" colour from the focused movie's
+              // dominant colour. The hero fades its bottom into this colour and
+              // the poster strip sits on it, so the movie's own colour frames the
+              // featured section stylishly (never washing the artwork out to the
+              // page background) before easing into the page below.
+              final focusedPoster = TmdbImages.posterSmall(focused.posterPath);
+              final dominant = focusedPoster == null
+                  ? null
+                  : ref.watch(dominantColorProvider(focusedPoster)).valueOrNull;
+
+              final isDark = Theme.of(context).brightness == Brightness.dark;
+              final base = isDark
+                  ? const Color(0xFF0C0C10)
+                  : const Color(0xFFE7E8EE);
+              // The hero fades its bottom into the tinted base so it melts into
+              // the full-screen liquid-glass wash of the active movie's colour.
+              final fadeColor = dominant == null
+                  ? base
+                  : Color.alphaBlend(
+                      dominant.withValues(alpha: isDark ? 0.35 : 0.68),
+                      base,
+                    );
+
+              return Stack(
+                children: [
+                  // The active movie's colour washes across the whole screen as
+                  // soft, liquid-glass orbs (iOS-style), over the neutral studio
+                  // backdrop painted by AppBackground.
+                  Positioned.fill(
+                    child: _DominantGlass(color: dominant, isDark: isDark),
+                  ),
+                  ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    children: [
+                      _HeroHeader(movie: focused, fadeColor: fadeColor),
+                      const SizedBox(height: AppSpacing.lg),
+                      _PosterStrip(
+                        movies: movies,
+                        focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
+                        onFocusChanged: (i) =>
+                            setState(() => _focusedIndex = i),
+                        onTap: _openDetails,
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      _MovieRail(
+                        title: 'Popular',
+                        provider: popularProvider,
+                        onTap: _openDetails,
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      _MovieRail(
+                        title: 'Top rated',
+                        provider: topRatedProvider,
+                        onTap: _openDetails,
+                      ),
+                      const SizedBox(height: AppSpacing.xxl),
+                      _MovieRail(
+                        title: 'New releases',
+                        provider: nowPlayingProvider,
+                        onTap: _openDetails,
+                      ),
+                      SizedBox(height: bottomClearance),
+                    ],
+                  ),
+                ],
               );
-            }
-
-            _precacheHeroArt(movies);
-            final focused = movies[_focusedIndex.clamp(0, movies.length - 1)];
-            final bottomClearance =
-                MediaQuery.paddingOf(context).bottom + AppSpacing.xl;
-
-            // Build a rich, dark "stage" colour from the focused movie's
-            // dominant colour. The hero fades its bottom into this colour and
-            // the poster strip sits on it, so the movie's own colour frames the
-            // featured section stylishly (never washing the artwork out to the
-            // page background) before easing into the page below.
-            final focusedPoster = TmdbImages.posterSmall(focused.posterPath);
-            final dominant = focusedPoster == null
-                ? null
-                : ref.watch(dominantColorProvider(focusedPoster)).valueOrNull;
-
-            final isDark = Theme.of(context).brightness == Brightness.dark;
-            final base = isDark
-                ? const Color(0xFF0C0C10)
-                : const Color(0xFFE7E8EE);
-            // The hero fades its bottom into the tinted base so it melts into
-            // the full-screen liquid-glass wash of the active movie's colour.
-            final fadeColor = dominant == null
-                ? base
-                : Color.alphaBlend(
-                    dominant.withValues(alpha: isDark ? 0.35 : 0.68),
-                    base,
-                  );
-
-            return Stack(
-              children: [
-                // The active movie's colour washes across the whole screen as
-                // soft, liquid-glass orbs (iOS-style), over the neutral studio
-                // backdrop painted by AppBackground.
-                Positioned.fill(
-                  child: _DominantGlass(color: dominant, isDark: isDark),
-                ),
-                ListView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: [
-                    _HeroHeader(movie: focused, fadeColor: fadeColor),
-                    const SizedBox(height: AppSpacing.lg),
-                    _PosterStrip(
-                      movies: movies,
-                      focusedIndex: _focusedIndex.clamp(0, movies.length - 1),
-                      onFocusChanged: (i) =>
-                          setState(() => _focusedIndex = i),
-                      onTap: _openDetails,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    _MovieRail(
-                      title: 'Popular',
-                      provider: popularProvider,
-                      onTap: _openDetails,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    _MovieRail(
-                      title: 'Top rated',
-                      provider: topRatedProvider,
-                      onTap: _openDetails,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    _MovieRail(
-                      title: 'New releases',
-                      provider: nowPlayingProvider,
-                      onTap: _openDetails,
-                    ),
-                    SizedBox(height: bottomClearance),
-                  ],
-                ),
-              ],
-            );
-          },
+            },
+          ),
         ),
-      ),
       ),
     );
   }
@@ -445,9 +445,9 @@ class _HomeTopBar extends StatelessWidget {
         const SizedBox(width: AppSpacing.md),
         Expanded(
           child: GestureDetector(
-            onTap: () => Navigator.of(context).push(
-              GlassPageRoute<void>(builder: (_) => const SearchScreen()),
-            ),
+            onTap: () => Navigator.of(
+              context,
+            ).push(GlassPageRoute<void>(builder: (_) => const SearchScreen())),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(23),
               child: BackdropFilter(
@@ -469,17 +469,10 @@ class _HomeTopBar extends StatelessWidget {
                       Expanded(
                         child: Text(
                           'Search Movies...',
-                          style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 15,
-                          ),
+                          style: TextStyle(color: Colors.white70, fontSize: 15),
                         ),
                       ),
-                      Icon(
-                        Icons.search_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
+                      Icon(Icons.search_rounded, color: Colors.white, size: 22),
                     ],
                   ),
                 ),
@@ -492,9 +485,9 @@ class _HomeTopBar extends StatelessWidget {
         _GlassIconTile(
           icon: Icons.bookmark_rounded,
           tooltip: 'Watchlist',
-          onTap: () => Navigator.of(context).push(
-            GlassPageRoute<void>(builder: (_) => const WatchlistScreen()),
-          ),
+          onTap: () => Navigator.of(
+            context,
+          ).push(GlassPageRoute<void>(builder: (_) => const WatchlistScreen())),
         ),
       ],
     );
@@ -751,8 +744,9 @@ class _DominantGlass extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                 child: Container(
-                  color: (isDark ? Colors.black : Colors.white)
-                      .withValues(alpha: isDark ? 0.12 : 0.08),
+                  color: (isDark ? Colors.black : Colors.white).withValues(
+                    alpha: isDark ? 0.12 : 0.08,
+                  ),
                 ),
               ),
             ),
@@ -927,99 +921,103 @@ class _PosterStripState extends ConsumerState<_PosterStrip> {
                     curve: Curves.easeOutCubic,
                     width: _cardWidth,
                     child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 260),
-                        curve: Curves.easeOutCubic,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          // A soft, neutral shadow lifts the active card — no
-                          // coloured border or glow halo, which read as noise.
-                          boxShadow: focused
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.28),
-                                    blurRadius: 22,
-                                    spreadRadius: -6,
-                                    offset: const Offset(0, 12),
-                                  ),
-                                ]
-                              : const [],
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(24),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              // All posters render clean and fully opaque so
-                              // the row reads clearly; the active card stands
-                              // out via its shadow, border and arrow bar rather
-                              // than dimming its neighbours.
-                              PosterImage(
-                                url: TmdbImages.posterSmall(movie.posterPath),
-                                memCacheWidth: 342,
-                              ),
-                              // Save-to-watchlist toggle in the top-right of
-                              // every card, so a movie can be saved straight
-                              // from the strip without opening it.
-                              Positioned(
-                                top: AppSpacing.sm,
-                                right: AppSpacing.sm,
-                                child: _CardSaveButton(movie: movie),
-                              ),
-                              // Active card: a full-width glass bar across the
-                              // bottom whose arrow opens the movie's details.
-                              if (focused)
-                                Positioned(
-                                  left: 0,
-                                  right: 0,
-                                  bottom: 0,
-                                  child: _GlassArrowBar(
-                                    onTap: () => widget.onTap(
-                                      movie,
-                                      'home-hero-${movie.id}',
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 260),
+                            curve: Curves.easeOutCubic,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              // A soft, neutral shadow lifts the active card — no
+                              // coloured border or glow halo, which read as noise.
+                              boxShadow: focused
+                                  ? [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.28,
+                                        ),
+                                        blurRadius: 22,
+                                        spreadRadius: -6,
+                                        offset: const Offset(0, 12),
+                                      ),
+                                    ]
+                                  : const [],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(24),
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  // All posters render clean and fully opaque so
+                                  // the row reads clearly; the active card stands
+                                  // out via its shadow, border and arrow bar rather
+                                  // than dimming its neighbours.
+                                  PosterImage(
+                                    url: TmdbImages.posterSmall(
+                                      movie.posterPath,
                                     ),
+                                    memCacheWidth: 342,
                                   ),
-                                ),
-                            ],
+                                  // Save-to-watchlist toggle in the top-right of
+                                  // every card, so a movie can be saved straight
+                                  // from the strip without opening it.
+                                  Positioned(
+                                    top: AppSpacing.sm,
+                                    right: AppSpacing.sm,
+                                    child: _CardSaveButton(movie: movie),
+                                  ),
+                                  // Active card: a full-width glass bar across the
+                                  // bottom whose arrow opens the movie's details.
+                                  if (focused)
+                                    Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      child: _GlassArrowBar(
+                                        onTap: () => widget.onTap(
+                                          movie,
+                                          'home-hero-${movie.id}',
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(height: AppSpacing.md),
+                        Builder(
+                          builder: (context) {
+                            final onSurface = Theme.of(
+                              context,
+                            ).colorScheme.onSurface;
+                            return Text(
+                              movie.title.toUpperCase(),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: focused
+                                        ? onSurface
+                                        : onSurface.withValues(alpha: 0.5),
+                                    fontWeight: focused
+                                        ? FontWeight.w800
+                                        : FontWeight.w500,
+                                    letterSpacing: focused ? 1.5 : 0.5,
+                                  ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Builder(
-                      builder: (context) {
-                        final onSurface = Theme.of(
-                          context,
-                        ).colorScheme.onSurface;
-                        return Text(
-                          movie.title.toUpperCase(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: focused
-                                    ? onSurface
-                                    : onSurface.withValues(alpha: 0.5),
-                                fontWeight: focused
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
-                                letterSpacing: focused ? 1.5 : 0.5,
-                              ),
-                        );
-                      },
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              ),
-            ),
-          );
-        },
-      ),
+            );
+          },
+        ),
       ),
     );
   }

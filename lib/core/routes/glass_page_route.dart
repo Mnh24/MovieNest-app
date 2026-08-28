@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 
 /// A custom iOS-style page route that applies a frosted glass blur effect to the
 /// previous page during push, pop, and interactive edge-swipe back gestures.
-class GlassPageRoute<T> extends PageRoute<T> with CupertinoRouteTransitionMixin<T> {
-  GlassPageRoute({
-    required this.builder,
-    super.settings,
-  });
+class GlassPageRoute<T> extends PageRoute<T>
+    with CupertinoRouteTransitionMixin<T> {
+  GlassPageRoute({required this.builder, super.settings});
 
   final WidgetBuilder builder;
 

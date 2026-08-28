@@ -66,11 +66,7 @@ class MovieDetailsScreen extends ConsumerWidget {
               ),
               children: [
                 _HeroImage(movie: movie, heroTag: heroTag),
-                _DetailsCard(
-                  movie: movie,
-                  details: details,
-                  credits: credits,
-                ),
+                _DetailsCard(movie: movie, details: details, credits: credits),
               ],
             ),
             Positioned(
@@ -131,8 +127,9 @@ class _DetailsGlow extends StatelessWidget {
                   child: BackdropFilter(
                     filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
                     child: Container(
-                      color: (isDark ? Colors.black : Colors.white)
-                          .withValues(alpha: isDark ? 0.12 : 0.08),
+                      color: (isDark ? Colors.black : Colors.white).withValues(
+                        alpha: isDark ? 0.12 : 0.08,
+                      ),
                     ),
                   ),
                 ),
@@ -365,9 +362,9 @@ class _DetailsCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           Text(
             'Overview',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -464,9 +461,9 @@ class _RatingRow extends StatelessWidget {
         if (year != null)
           Text(
             '($year)',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant),
           ),
       ],
     );
@@ -543,8 +540,18 @@ class _CustomizeSection extends StatelessWidget {
 String movieReleaseDateLabel(String? releaseDate) {
   if (releaseDate == null || releaseDate.length < 10) return '—';
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ]; // ignore: prefer_const_declarations
   final year = releaseDate.substring(0, 4);
   final month = int.tryParse(releaseDate.substring(5, 7));
@@ -625,9 +632,9 @@ class _DetailsUnavailable extends StatelessWidget {
         Flexible(
           child: Text(
             'Additional details unavailable. $message',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
           ),
         ),
       ],
@@ -694,9 +701,7 @@ class _WatchlistToggle extends ConsumerWidget {
       child: Material(
         color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
         shape: CircleBorder(
-          side: BorderSide(
-            color: scheme.outlineVariant.withValues(alpha: 0.7),
-          ),
+          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.7)),
         ),
         child: InkWell(
           customBorder: const CircleBorder(),
@@ -739,9 +744,9 @@ class _CastSection extends StatelessWidget {
               children: [
                 Text(
                   'Cast',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 if (cast.length > preview.length)
                   TextButton(
@@ -822,9 +827,9 @@ class _CastAvatar extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: scheme.onSurfaceVariant,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelSmall?.copyWith(color: scheme.onSurfaceVariant),
             ),
         ],
       ),
