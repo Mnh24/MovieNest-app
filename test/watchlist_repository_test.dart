@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movienest/features/movies/domain/entities/movie.dart';
+import 'package:movienest/features/watchlist/data/datasources/watchlist_image_store.dart';
 import 'package:movienest/features/watchlist/data/datasources/watchlist_local_datasource.dart';
 import 'package:movienest/features/watchlist/data/repositories/watchlist_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -14,7 +15,10 @@ void main() {
 
   Future<WatchlistRepository> buildRepository() async {
     final prefs = await SharedPreferences.getInstance();
-    return WatchlistRepository(WatchlistLocalDataSource(prefs));
+    return WatchlistRepository(
+      WatchlistLocalDataSource(prefs),
+      const WatchlistImageStore(),
+    );
   }
 
   setUp(() async {

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../features/movies/data/datasources/tmdb_remote_datasource.dart';
 import '../features/movies/data/repositories/movie_repository_impl.dart';
 import '../features/movies/domain/repositories/movie_repository.dart';
+import '../features/watchlist/data/datasources/watchlist_image_store.dart';
 import '../features/watchlist/data/datasources/watchlist_local_datasource.dart';
 import '../features/watchlist/data/repositories/watchlist_repository.dart';
 import 'network/dio_client.dart';
@@ -36,6 +37,13 @@ final watchlistLocalDataSourceProvider = Provider<WatchlistLocalDataSource>((
   return WatchlistLocalDataSource(ref.watch(sharedPreferencesProvider));
 });
 
+final watchlistImageStoreProvider = Provider<WatchlistImageStore>((ref) {
+  return const WatchlistImageStore();
+});
+
 final watchlistRepositoryProvider = Provider<WatchlistRepository>((ref) {
-  return WatchlistRepository(ref.watch(watchlistLocalDataSourceProvider));
+  return WatchlistRepository(
+    ref.watch(watchlistLocalDataSourceProvider),
+    ref.watch(watchlistImageStoreProvider),
+  );
 });

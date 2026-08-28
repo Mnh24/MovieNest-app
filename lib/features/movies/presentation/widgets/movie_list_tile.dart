@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/utils/tmdb_images.dart';
@@ -18,11 +19,16 @@ class MovieListTile extends StatelessWidget {
     required this.onTap,
     this.trailing,
     this.heroTag,
+    this.cacheManager,
   });
 
   final Movie movie;
   final VoidCallback onTap;
   final Widget? trailing;
+
+  /// Optional dedicated cache for the poster. The watchlist passes its
+  /// long-lived store so saved artwork renders offline.
+  final BaseCacheManager? cacheManager;
 
   /// When set, wraps the poster in a [Hero] so tapping into the details
   /// screen morphs the artwork instead of cutting to it. Pass a value unique
@@ -42,7 +48,10 @@ class MovieListTile extends StatelessWidget {
       child: SizedBox(
         width: 72,
         height: 104,
-        child: PosterImage(url: TmdbImages.poster(movie.posterPath)),
+        child: PosterImage(
+          url: TmdbImages.poster(movie.posterPath),
+          cacheManager: cacheManager,
+        ),
       ),
     );
 

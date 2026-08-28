@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
 /// Displays a movie poster/backdrop with graceful loading, error and missing
 /// image handling so the UI never shows a broken-image glyph or distorts art.
@@ -11,12 +12,18 @@ class PosterImage extends StatelessWidget {
     this.alignment = Alignment.center,
     this.iconSize = 32,
     this.memCacheWidth,
+    this.cacheManager,
   });
 
   final String? url;
   final BoxFit fit;
   final Alignment alignment;
   final double iconSize;
+
+  /// When set, the image is read from and stored in this cache instead of the
+  /// default one. The watchlist passes its dedicated store so saved posters
+  /// stay available offline.
+  final BaseCacheManager? cacheManager;
 
   /// Target decode width in pixels. Decoding the bitmap at the size it will
   /// actually be drawn (rather than full resolution) makes images appear
@@ -30,6 +37,7 @@ class PosterImage extends StatelessWidget {
 
     return CachedNetworkImage(
       imageUrl: imageUrl,
+      cacheManager: cacheManager,
       fit: fit,
       alignment: alignment,
       memCacheWidth: memCacheWidth,

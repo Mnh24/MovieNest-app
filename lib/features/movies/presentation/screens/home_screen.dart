@@ -80,6 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       child: Scaffold(
         extendBodyBehindAppBar: true,
         body: RefreshIndicator(
+<<<<<<< HEAD
           onRefresh: _refresh,
           child: trending.when(
             loading: () => const _HomeSkeleton(),
@@ -173,6 +174,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ],
                   ),
                 ],
+=======
+        onRefresh: _refresh,
+        child: trending.when(
+          loading: () => const _HomeSkeleton(),
+          error: (error, _) => Stack(
+            children: [
+              SafeArea(
+                child: _RefreshableMessage(
+                  icon: Icons.cloud_off_rounded,
+                  title: 'Unable to load movies.',
+                  message: messageForError(error),
+                  onRetry: () =>
+                      ref.read(trendingProvider.notifier).refresh(),
+                ),
+              ),
+              // Keep the top bar reachable when offline so the theme toggle
+              // and the saved watchlist (which works without a network) are
+              // still one tap away, instead of being hidden behind the error.
+              Positioned(
+                left: AppSpacing.lg,
+                right: AppSpacing.lg,
+                top: MediaQuery.paddingOf(context).top + AppSpacing.sm,
+                child: const _HomeTopBar(),
+              ),
+            ],
+          ),
+          data: (movies) {
+            if (movies.isEmpty) {
+              return const SafeArea(
+                child: _RefreshableMessage(
+                  icon: Icons.movie_filter_outlined,
+                  title: 'No trending movies right now.',
+                  message: 'Pull down to refresh and try again.',
+                ),
+>>>>>>> 8d209f5 (Keep the offline Home usable and persist watchlist posters)
               );
             },
           ),
