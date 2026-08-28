@@ -1,3 +1,4 @@
+import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movienest/features/movies/domain/entities/movie.dart';
 import 'package:movienest/features/watchlist/data/datasources/watchlist_image_store.dart';
@@ -8,6 +9,17 @@ import 'package:shared_preferences/shared_preferences.dart';
 Movie _movie(int id, [String title = 'Movie']) =>
     Movie(id: id, title: title, posterPath: '/p$id.jpg');
 
+class FakeWatchlistImageStore implements WatchlistImageStore {
+  @override
+  CacheManager get cacheManager => throw UnimplementedError();
+
+  @override
+  Future<void> save(String? url) async {}
+
+  @override
+  Future<void> remove(String? url) async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -17,7 +29,7 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     return WatchlistRepository(
       WatchlistLocalDataSource(prefs),
-      const WatchlistImageStore(),
+      FakeWatchlistImageStore(),
     );
   }
 

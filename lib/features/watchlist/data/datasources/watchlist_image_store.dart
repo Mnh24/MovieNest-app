@@ -29,7 +29,7 @@ class WatchlistImageStore {
   Future<void> save(String? url) async {
     if (url == null || url.isEmpty) return;
     try {
-      await _cache.downloadFile(url);
+      await _cache.downloadFile(url).timeout(const Duration(seconds: 1));
     } catch (_) {
       // Best-effort: keep the watchlist write successful regardless.
     }
@@ -40,7 +40,7 @@ class WatchlistImageStore {
   Future<void> remove(String? url) async {
     if (url == null || url.isEmpty) return;
     try {
-      await _cache.removeFile(url);
+      await _cache.removeFile(url).timeout(const Duration(seconds: 1));
     } catch (_) {
       // The file may already be gone; nothing to do.
     }

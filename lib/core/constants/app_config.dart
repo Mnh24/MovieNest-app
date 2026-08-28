@@ -26,11 +26,16 @@ class AppConfig {
   static const String tmdbProxyUrl = String.fromEnvironment('TMDB_PROXY_URL');
 
   /// TMDB API key injected via `--dart-define` (direct/dev path only).
-  static const String tmdbApiKey = String.fromEnvironment('TMDB_API_KEY');
+  static const String tmdbApiKey = String.fromEnvironment(
+    'TMDB_API_KEY',
+    defaultValue: '2f1e56249bd5009239f5c229f8748da1',
+  );
 
   /// TMDB API Read Access Token (v4 Bearer token) injected via `--dart-define`.
   static const String tmdbReadAccessToken = String.fromEnvironment(
     'TMDB_READ_ACCESS_TOKEN',
+    defaultValue:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiIyZjFlNTYyNDliZDUwMDkyMzlmNWMyMjlmODc0OGRhMSIsIm5iZiI6MTc4NzY3MDYxNi42MjQsInN1YiI6IjZhOGRiMDU4NDIzMDQyYjdjYmI2OGRmZSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.b76449zNFseAaxV_w6gZHCN74Yqk5HARg2BUF6_FrBU',
   );
 
   /// Whether the app should route TMDB calls through the backend proxy.
